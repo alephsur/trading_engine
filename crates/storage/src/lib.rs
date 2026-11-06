@@ -59,3 +59,5 @@ mod tests {
 pub mod market;
 
 pub mod signals;
+
+pub mod paper;

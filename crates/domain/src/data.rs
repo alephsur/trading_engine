@@ -136,6 +136,7 @@ impl Book {
 }
 #[derive(Debug)]
 pub enum MarketEvent {
+    Context(AssetContext),
     Candle(Candle),
     Trades(Vec<Trade>),
     Book(Book),
@@ -143,6 +144,16 @@ pub enum MarketEvent {
 pub fn parse_event(value: &serde_json::Value) -> Result<Option<MarketEvent>> {
     let data = value["data"].clone();
     Ok(match value["channel"].as_str() {
+        Some("activeAssetCtx") => {
+            let context: AssetContext = serde_json::from_value(data)?;
+            symbol(&context.coin)?;
+            ensure!(
+                context.ctx.oracle_px > Decimal::ZERO
+                    && context.ctx.oracle_px <= Decimal::from(1_000_000_000),
+                "invalid oracle price"
+            );
+            Some(MarketEvent::Context(context))
+        }
         Some("candle") => {
             let candle: Candle = serde_json::from_value(data)?;
             candle.validate()?;
@@ -198,4 +209,22 @@ mod tests {
         let t: Trade = serde_json::from_value(serde_json::json!({"coin":"BTC","time":1,"tid":1,"side":"X","px":"10","sz":"1","hash":"h"})).unwrap();
         assert!(t.validate().is_err());
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AssetContext {
+    pub coin: String,
+    pub ctx: OracleContext,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OracleContext {
+    #[serde(rename = "oraclePx")]
+    pub oracle_px: Decimal,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FundingRate {
+    pub coin: String,
+    #[serde(rename = "fundingRate")]
+    pub funding_rate: Decimal,
+    pub time: i64,
 }

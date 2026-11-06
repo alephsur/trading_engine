@@ -38,10 +38,10 @@ Aceptación: señales usan solo datos disponibles al cierre; pruebas sin look-ah
 
 ## Fase 4 — riesgo y paper trading
 
-- [ ] Reglas conservadoras, sizing decimal y restricciones oficiales del exchange.
-- [ ] PaperExecutor con spreads, fees, slippage, funding y liquidez.
-- [ ] Órdenes idempotentes, fills parciales, posiciones, stops y reconciliación.
-- [ ] Circuit breakers y auditoría de decisiones rechazadas.
+- [x] Reglas conservadoras, sizing decimal y restricciones oficiales del exchange.
+- [x] PaperExecutor con spreads, fees, slippage, funding y liquidez.
+- [x] Órdenes idempotentes, fills parciales, posiciones, stops y reconciliación.
+- [x] Circuit breakers y auditoría de decisiones rechazadas.
 
 Aceptación: ninguna entrada elude riesgo; incertidumbre bloquea nuevas entradas;
 reinicios no duplican órdenes ni posiciones y PnL incluye costes.

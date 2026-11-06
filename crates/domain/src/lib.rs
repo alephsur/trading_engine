@@ -14,7 +14,7 @@ pub struct Market {
     #[serde(default)]
     pub is_delisted: bool,
 }
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListedMarket {
     pub asset_index: usize,
     pub metadata: Market,

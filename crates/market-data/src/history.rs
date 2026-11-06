@@ -61,6 +61,40 @@ impl PublicClient {
         }
         Ok(trades)
     }
+    pub async fn funding(
+        &self,
+        symbol: &str,
+        start: i64,
+        end: i64,
+    ) -> Result<Vec<trading_domain::data::FundingRate>> {
+        trading_domain::data::symbol(symbol)?;
+        ensure!(
+            start >= 0 && end >= start && end - start <= 48 * 3_600_000,
+            "invalid funding window"
+        );
+        let rates: Vec<trading_domain::data::FundingRate> = serde_json::from_value(
+            self.post(
+                json!({"type":"fundingHistory","coin":symbol,"startTime":start,"endTime":end}),
+            )
+            .await?,
+        )?;
+        ensure!(rates.len() <= 49, "oversized funding response");
+        let mut hours = std::collections::BTreeSet::new();
+        for rate in &rates {
+            ensure!(
+                rate.coin == symbol
+                    && rate.time >= start
+                    && rate.time <= end
+                    && rate.funding_rate.abs() <= "0.005".parse()?,
+                "inconsistent funding response"
+            );
+            ensure!(
+                hours.insert(rate.time / 3_600_000),
+                "duplicate funding hour"
+            );
+        }
+        Ok(rates)
+    }
     pub async fn candles(
         &self,
         symbol: &str,
@@ -144,6 +178,28 @@ mod tests {
         assert_eq!(server.await.unwrap(), 1);
         let (client, server) = fixture(vec![(400, "{}")]).await;
         assert!(client.candles("BTC", "1m", 0, 0).await.is_err());
+        assert_eq!(server.await.unwrap(), 1);
+    }
+    #[tokio::test]
+    async fn funding_rejects_inconsistent_rates_and_duplicate_hours() {
+        for body in [
+            r#"[{"coin":"ETH","time":3600001,"fundingRate":"0.0001"}]"#,
+            r#"[{"coin":"BTC","time":3600001,"fundingRate":"0.01"}]"#,
+            r#"[{"coin":"BTC","time":3600001,"fundingRate":"0.0001"},{"coin":"BTC","time":3600002,"fundingRate":"0.0001"}]"#,
+        ] {
+            let (client, server) = fixture(vec![(200, body)]).await;
+            assert!(client.funding("BTC", 3600000, 7200000).await.is_err());
+            assert_eq!(server.await.unwrap(), 1);
+        }
+        let (client, server) = fixture(vec![(
+            200,
+            r#"[{"coin":"BTC","time":3600001,"fundingRate":"-0.0001"}]"#,
+        )])
+        .await;
+        assert_eq!(
+            client.funding("BTC", 3600000, 7200000).await.unwrap().len(),
+            1
+        );
         assert_eq!(server.await.unwrap(), 1);
     }
 }

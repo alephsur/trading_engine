@@ -1,0 +1,17 @@
+{
+  "capital": "10000",
+  "risk_fraction": "0.0025",
+  "daily_loss_fraction": "0.01",
+  "max_positions": 2,
+  "exposure_fraction": "0.20",
+  "leverage": "1",
+  "correlated_exposure_fraction": "0.15",
+  "fee_bps": "4.5",
+  "slippage_bps": "2",
+  "participation": "0.10",
+  "max_spread_bps": "20",
+  "max_atr_fraction": "0.03",
+  "stop_atr": "2",
+  "reward_multiple": "2",
+  "max_signal_age_ms": 120000
+}

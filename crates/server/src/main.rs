@@ -1,4 +1,5 @@
 mod api;
+mod paper;
 mod recovery;
 use anyhow::{Result, ensure};
 use axum::{Json, Router, extract::State, http::StatusCode, routing::get};
@@ -21,6 +22,7 @@ struct Feed {
     history_ready: bool,
     analysis_ready: bool,
     last_recovery: Option<Instant>,
+    paper_update: Option<Instant>,
 }
 #[derive(Clone)]
 struct App {
@@ -31,7 +33,7 @@ struct App {
 }
 
 fn validate_mode(mode: &str) -> Result<()> {
-    ensure!(mode == "PAPER", "only PAPER read-only mode is supported");
+    ensure!(mode == "PAPER", "only PAPER simulation mode is supported");
     Ok(())
 }
 fn book_recent(time: i64) -> bool {
@@ -63,7 +65,10 @@ async fn health(State(app): State<App>) -> (StatusCode, Json<Value>) {
         Ok(Ok(_))
     );
     let feed = app.feed.read().await;
-    let ready = db_ok && fresh(&feed) && history_ready(&feed) && feed.analysis_ready;
+    let paper_ready = feed
+        .paper_update
+        .is_some_and(|t| t.elapsed() < Duration::from_secs(15));
+    let ready = db_ok && fresh(&feed) && history_ready(&feed) && feed.analysis_ready && paper_ready;
     (
         if ready {
             StatusCode::OK
@@ -71,7 +76,7 @@ async fn health(State(app): State<App>) -> (StatusCode, Json<Value>) {
             StatusCode::SERVICE_UNAVAILABLE
         },
         Json(
-            json!({"status":if ready {"ready"} else {"degraded"},"mode":"PAPER","execution_enabled":false,"database":db_ok,"market_data_fresh":fresh(&feed),"history_ready":history_ready(&feed),"analysis_ready":feed.analysis_ready}),
+            json!({"status":if ready {"ready"} else {"degraded"},"mode":"PAPER","execution_enabled":false,"paper_execution_enabled":true,"paper_ready":paper_ready,"database":db_ok,"market_data_fresh":fresh(&feed),"history_ready":history_ready(&feed),"analysis_ready":feed.analysis_ready}),
         ),
     )
 }
@@ -97,6 +102,9 @@ fn router(app: App) -> Router {
         .route("/strategies", get(api::strategies))
         .route("/evaluations", get(api::evaluations))
         .route("/signals", get(api::signals))
+        .route("/paper/account", get(api::paper_account))
+        .route("/paper/positions", get(api::paper_positions))
+        .route("/paper/{kind}", get(api::paper_ledger))
         .with_state(app)
 }
 async fn session(app: &App) -> Result<()> {
@@ -132,6 +140,9 @@ async fn session(app: &App) -> Result<()> {
                 use trading_domain::data::{MarketEvent, parse_event};
                 if let Some(event) = parse_event(&value)? {
                     match event {
+                        MarketEvent::Context(context) => {
+                            trading_storage::paper::oracle(&app.pool,&context).await?;
+                        }
                         MarketEvent::Candle(candle) => {
                             anyhow::ensure!(candle.t <= trading_domain::data::now_ms() + 5_000, "future candle");
                             tokio::time::timeout(Duration::from_secs(5), trading_storage::market::candles(&app.pool, &[candle], false)).await??;
@@ -207,6 +218,12 @@ async fn main() -> Result<()> {
     };
     let engine = Arc::new(trading_quant::Engine::builtin(config)?);
     trading_storage::signals::register(&pool, &engine).await?;
+    let paper_config = match std::env::var("PAPER_CONFIG_PATH") {
+        Ok(path) => serde_json::from_str(&std::fs::read_to_string(path)?)?,
+        Err(std::env::VarError::NotPresent) => trading_paper::Config::default(),
+        Err(error) => return Err(error.into()),
+    };
+    trading_storage::paper::initialize(&pool, paper_config).await?;
     let app = App {
         engine,
         pool,
@@ -218,10 +235,16 @@ async fn main() -> Result<()> {
     )
     .await?;
     let feed_task = tokio::spawn(supervise(app.clone()));
+    let paper_task = tokio::spawn(paper::run(app.clone()));
+    let funding_task = tokio::spawn(paper::funding(app.clone()));
     tracing::info!(event="server_started", address=%listener.local_addr()?);
     axum::serve(listener, router(app))
         .with_graceful_shutdown(shutdown())
         .await?;
+    paper_task.abort();
+    funding_task.abort();
+    let _ = paper_task.await;
+    let _ = funding_task.await;
     feed_task.abort();
     let _ = feed_task.await;
     Ok(())

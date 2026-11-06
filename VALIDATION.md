@@ -1,4 +1,40 @@
-# Verificación — fase 3
+# Verificación — fase 4
+
+## Resultado local
+
+- 37 pruebas aprobadas: 33 sin servicios externos y 4 con PostgreSQL.
+- Riesgo decimal, mínimos/precisión, límites agregados y correlación, bloqueo de
+  promediado, spread, profundidad, volatilidad, precios extremos y pérdida diaria.
+- Fills de varios niveles, parciales IOC, cancelación de remanentes, cierres
+  reduce-only parciales, protección contra reutilizar liquidez y stops con gaps.
+- PnL long/short con comisiones de entrada/salida; funding de ambos signos, sin
+  duplicados, obligaciones conservadas después del cierre y bloqueo si falta funding.
+- Reinicio serializado determinista y rechazo de retrocesos del reloj.
+- PostgreSQL: rollback de decisiones/fills/cuenta tras fallo inyectado; dos
+  consumidores concurrentes producen una sola orden; reconexión preserva efectivo
+  y posición; consumo de un ID confirmado tarde; historial inconsistente bloquea ejecución.
+- API pública de tasas: rechaza activo incorrecto, tasa fuera de límites y horas duplicadas.
+- Smoke con datos reales en servidor local y DB temporal separada: 16 series,
+  análisis, cuenta PAPER, endpoints y trabajador activo. Una señal nueva de HYPE
+  produjo una posición simulada con fills y comisiones. Las señales anteriores a
+  activar la cuenta se rechazaron. Un reinicio conservó esa cuenta y su orden sin duplicarla.
+- Formato, Clippy sin advertencias y configuración Compose válidos.
+
+La construcción/arranque Docker y recuperación completa se verifican en GitHub
+Actions: el socket Docker local sigue sin permitir acceso. Resultado de CI pendiente
+hasta terminar la ejecución del commit de esta fase.
+
+## Alcance y límites
+
+Las pruebas no establecen rentabilidad. El funding usa tasas históricas y un oracle
+observado antes de la hora, no la liquidación exacta de una cuenta real. Una hora
+sin oracle verificable conserva la obligación pendiente y bloquea entradas. En
+[PAPER.md](PAPER.md) se describen los modelos, límites, recuperación e incertidumbres.
+LIVE y TESTNET siguen rechazados; no se han enviado órdenes al exchange.
+
+---
+
+## Historial de verificación — fase 3
 
 ## Resultado local
 

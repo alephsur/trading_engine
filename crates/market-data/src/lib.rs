@@ -51,6 +51,7 @@ pub async fn stream(tx: mpsc::Sender<serde_json::Value>) -> Result<()> {
 pub fn subscriptions() -> Vec<serde_json::Value> {
     let mut subscriptions = vec![json!({"type":"allMids"})];
     for symbol in SYMBOLS {
+        subscriptions.push(json!({"type":"activeAssetCtx","coin":symbol}));
         subscriptions.push(json!({"type":"trades","coin":symbol}));
         subscriptions.push(json!({"type":"l2Book","coin":symbol}));
         for interval in INTERVALS {
@@ -66,8 +67,8 @@ mod tests {
         let subscriptions = super::subscriptions();
         let unique: std::collections::BTreeSet<_> =
             subscriptions.iter().map(ToString::to_string).collect();
-        assert_eq!(subscriptions.len(), 25);
-        assert_eq!(unique.len(), 25);
+        assert_eq!(subscriptions.len(), 29);
+        assert_eq!(unique.len(), 29);
         assert!(subscriptions.iter().all(|s| s.get("user").is_none()));
     }
 }

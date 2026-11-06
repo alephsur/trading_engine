@@ -1,21 +1,21 @@
-# Arquitectura — fase 3
+# Arquitectura — fase 4
 
 ## Componentes ejecutables
 
-Workspace Rust con cinco crates:
+Workspace Rust con seis crates:
 
 - `trading-domain`: universo permitido y validación de metadatos, mids, OHLCV,
   operaciones y snapshots de libro. Precios/cantidades `rust_decimal`, strings JSON.
 - `trading-market-data`: cliente HTTP público, pacing/reintentos y WebSocket con
-  25 suscripciones: mids + cuatro libros + cuatro streams de operaciones + 16 velas.
+  29 suscripciones: mids, cuatro libros, cuatro trades, 16 velas y cuatro contextos oracle.
 - `trading-quant`: indicadores decimales, estrategias puras y replay determinista.
+- `trading-paper`: cuenta, riesgo y ejecución simulada puros, con reloj/datos inyectados.
 - `trading-storage`: PostgreSQL, migraciones embebidas, escrituras idempotentes y consultas.
 - `trading-server`: Axum, supervisor, recuperación histórica concurrente y frescura.
 
 El adaptador descubre de nuevo los índices de BTC, ETH, SOL y HYPE en cada conexión.
 Ausencia, duplicados o mercados retirados impiden preparar el feed. No se cargan
-claves, no se firman órdenes y no existe un cliente de ejecución. PAPER sigue
-significando lectura pública; LIVE, TESTNET y BACKTEST se rechazan.
+claves, no se firman órdenes y no existe un cliente de ejecución real. PAPER simula con datos públicos; LIVE, TESTNET y BACKTEST se rechazan.
 
 ## Ingesta y consistencia
 
@@ -84,7 +84,7 @@ Un lote de hasta 500 cierres por serie se guarda con su cursor en una sola
 transacción; los bloqueos de cursor y claves únicas impiden duplicados. La tabla
 `signals` sirve como flujo interno persistente con identificador secuencial.
 Se guardan también las evaluaciones sin señal y sus motivos. Todas las propuestas
-son de análisis, sin elegibilidad de ejecución. Ver [STRATEGIES.md](STRATEGIES.md).
+conservan su origen de análisis. El simulador evalúa por separado su elegibilidad PAPER. Ver [STRATEGIES.md](STRATEGIES.md).
 
 `/health` exige además que las evaluaciones alcancen la cobertura actual.
 `/strategies` expone parámetros/versiones; `/evaluations` incluye indicadores y
@@ -102,10 +102,11 @@ Se mantiene el adaptador público pequeño. El SDK oficial revisado en fase 1 fu
 `hyperliquid_rust_sdk` 0.6.0, con firma Alloy y WebSocket 0.20. Se reevaluará antes
 de integrar órdenes testnet en fase 7; no se afirma compatibilidad de ejecución.
 
-La fase 3 incorpora indicadores, Strategy y señales sobre cierres confirmados. Riesgo,
-sizing, PaperExecutor y posiciones llegarán en fase 4, independientes de estrategias
-u opiniones de IA. Sus máquinas de estados necesitarán idempotencia transaccional
-y recuperación de órdenes: las tablas actuales no son ese motor de ejecución.
+La fase 4 añade una cuenta PAPER transaccional y un trabajador separado de ingesta
+que revisa cierres y propuestas cada segundo. El histórico de fills reconstruye
+las posiciones y el efectivo; la comparación con el snapshot detecta discrepancias.
+La financiación conserva obligaciones independientes de posiciones abiertas.
+Ver [PAPER.md](PAPER.md) para estados, reglas, costes y limitaciones explícitas.
 
 ## Referencias oficiales
 

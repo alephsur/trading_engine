@@ -70,3 +70,15 @@ for query in ("symbol=DOGE", "symbol=BTC&interval=2m", "symbol=BTC&limit=0"):
     except urllib.error.HTTPError as error:
         assert error.code == 400
 print("PASS: real prices, books, trades, 16 closed candle series, indicators, strategy evaluations and analysis-only signals")
+paper = get('/paper/account')
+assert paper['mode'] == 'PAPER' and not paper['real_execution_enabled']
+account = paper['account']
+assert account['config']['capital'] == '10000'
+assert account['config']['risk_fraction'] == '0.0025'
+assert len(account['positions']) <= 2
+assert account['last_tick'] >= int(time.time() * 1000) - 15000
+assert get('/health')['paper_ready']
+assert all(p['stop'] and p['take_profit'] for p in get('/paper/positions')['positions'])
+for kind in ('orders', 'fills', 'decisions', 'funding', 'events'):
+    assert isinstance(get(f'/paper/{kind}?limit=10')[kind], list)
+print('PASS: persistent PAPER account, risk limits, worker freshness and audit endpoints')

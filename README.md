@@ -1,10 +1,10 @@
 # AI Trading Engine
 
-Fase 3 funcional en Rust: PostgreSQL, perpetuos BTC/ETH/SOL/HYPE, precios, libros,
+Fase 4 funcional en Rust: PostgreSQL, perpetuos BTC/ETH/SOL/HYPE, precios, libros,
 operaciones y velas 1m/5m/15m/1h de Hyperliquid. Incluye recuperación histórica
 y API de salud. Añade indicadores y cuatro estrategias sobre cierres confirmados.
-No ejecuta ni simula
-órdenes todavía. No necesita cuenta, wallet ni credenciales de Hyperliquid.
+Simula órdenes y posiciones con controles de riesgo, costes y recuperación persistente.
+La ejecución real permanece desactivada. No necesita cuenta, wallet ni credenciales de Hyperliquid.
 
 ## Arranque con Docker
 
@@ -46,6 +46,7 @@ El binario lee variables de entorno; no carga `.env` automáticamente.
 | `BIND_ADDR` | `127.0.0.1:3000` | Dirección de la API |
 | `TRADING_MODE` | `PAPER` | Único valor admitido en esta fase |
 | `STRATEGY_CONFIG_PATH` | Defaults integrados | Archivo JSON de parámetros, validado al arrancar |
+| `PAPER_CONFIG_PATH` | Defaults integrados | Riesgo/costes PAPER; debe coincidir con la cuenta persistida |
 | `RUST_LOG` | `info` | Nivel de logs JSON; `debug` muestra snapshots persistidos |
 
 Los endpoints públicos de Hyperliquid están fijados en el adaptador; no se envían
@@ -54,7 +55,7 @@ peticiones autenticadas. Los índices de activos se descubren al conectar.
 ## API
 
 - `GET /livez`: proceso vivo, independiente del estado de la DB/feed.
-- `GET /health`: 200 listo o 503 degradado; incluye DB, frescura, recuperación histórica, análisis y ejecución desactivada.
+- `GET /health`: 200 listo o 503 degradado; incluye DB, frescura, recuperación histórica, análisis, trabajador PAPER y ejecución real desactivada.
 - `GET /markets`: los cuatro mercados, precisión, leverage máximo e índice descubierto.
 - `GET /prices`: precios como strings decimales, frescura y edad desde recepción local.
 
@@ -88,6 +89,10 @@ Son mids indicativos, no cotizaciones ejecutables. Los eventos se conservan en
 Velas, operaciones y libros tienen tablas propias. Esta fase no aplica retención:
 una ejecución prolongada aumentará el volumen de la base de datos.
 
+La cuenta simulada y su auditoría están en `/paper/account`, `/paper/positions`,
+`/paper/orders`, `/paper/fills`, `/paper/decisions`, `/paper/funding` y `/paper/events`.
+Ver [modelo de ejecución, límites y financiación](PAPER.md).
+
 ## Verificación
 
 ```sh
@@ -99,8 +104,8 @@ python3 scripts/smoke.py http://127.0.0.1:3000
 docker compose config --quiet
 ```
 
-La prueba de integración requiere una base de pruebas: aplica migraciones y escribe
-un evento. Está ignorada en la suite sin DB y se ejecuta explícitamente en CI.
+Las pruebas de integración requieren una base de pruebas: aplican migraciones y
+verifican mercado, señales y cuenta PAPER en esquemas aislados. Se ejecutan explícitamente en CI.
 El smoke E2E usa el servidor arrancado y datos reales; requiere Internet.
 CI valida formato, lint, tests, integración PostgreSQL, construcción y arranque Docker,
 las 16 series con datos reales, evaluaciones y recuperación tras reiniciar. `scripts/recovery_smoke.py`
@@ -109,4 +114,4 @@ elimina una vela de la base desechable de Compose para comprobar su recuperació
 
 Consulta [arquitectura](ARCHITECTURE.md), [roadmap](ROADMAP.md) y
 [verificación de esta entrega](VALIDATION.md). Las siguientes fases añaden
-riesgo, simulación y dashboard; no están implementadas en esta entrega.
+backtesting, métricas y dashboard; no están implementados en esta entrega.

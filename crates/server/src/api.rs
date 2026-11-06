@@ -125,3 +125,43 @@ pub async fn signals(State(app): State<App>, Query(q): Query<DataQuery>) -> Resp
         json!({"signals":rows,"config_id":app.engine.id(),"analysis_only":true,"order":"event_id_desc"}),
     ))
 }
+
+pub async fn paper_account(State(app): State<App>) -> Response {
+    let state = trading_storage::paper::read(&app.pool)
+        .await
+        .map_err(unavailable)?;
+    Ok(Json(
+        json!({"mode":"PAPER","real_execution_enabled":false,"account":state}),
+    ))
+}
+pub async fn paper_positions(State(app): State<App>) -> Response {
+    let state = trading_storage::paper::read(&app.pool)
+        .await
+        .map_err(unavailable)?;
+    Ok(Json(
+        json!({"positions":state.positions,"as_of":state.last_tick}),
+    ))
+}
+#[derive(Deserialize)]
+pub struct LedgerQuery {
+    #[serde(default = "default_limit")]
+    limit: i64,
+}
+pub async fn paper_ledger(
+    State(app): State<App>,
+    axum::extract::Path(kind): axum::extract::Path<String>,
+    Query(q): Query<LedgerQuery>,
+) -> Response {
+    if !(1..=500).contains(&q.limit)
+        || !["orders", "fills", "decisions", "funding", "events"].contains(&kind.as_str())
+    {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(json!({"error":"invalid ledger or limit"})),
+        ));
+    }
+    let rows = trading_storage::paper::ledger(&app.pool, &kind, q.limit)
+        .await
+        .map_err(unavailable)?;
+    Ok(Json(json!({kind:rows,"mode":"PAPER"})))
+}

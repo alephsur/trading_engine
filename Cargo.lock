@@ -2189,6 +2189,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "trading-paper"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "rust_decimal",
+ "serde",
+ "serde_json",
+ "trading-domain",
+]
+
+[[package]]
 name = "trading-quant"
 version = "0.1.0"
 dependencies = [
@@ -2215,6 +2226,7 @@ dependencies = [
  "tracing-subscriber",
  "trading-domain",
  "trading-market-data",
+ "trading-paper",
  "trading-quant",
  "trading-storage",
 ]
@@ -2224,10 +2236,12 @@ name = "trading-storage"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "rust_decimal",
  "serde_json",
  "sqlx",
  "tokio",
  "trading-domain",
+ "trading-paper",
  "trading-quant",
 ]
 

@@ -16,5 +16,6 @@ axum = "0.8"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 serde.workspace = true
 trading-quant = { path = "../quant" }
+trading-paper = { path = "../paper" }
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }

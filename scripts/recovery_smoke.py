@@ -19,6 +19,8 @@ def get(path):
 
 # Stop ingestion before deleting one historical candle to exercise recovery on restart.
 subprocess.run(["docker", "compose", "stop", "engine"], check=True)
+saved_paper = json.loads(sql("SELECT state FROM paper_accounts WHERE account_id='paper-default'"))
+saved_orders = json.loads(sql("SELECT coalesce(jsonb_agg(payload ORDER BY order_id),'[]') FROM paper_orders WHERE account_id='paper-default'"))
 saved_evaluation = json.loads(sql("SELECT payload FROM evaluations WHERE symbol='BTC' AND interval='1m' ORDER BY open_time DESC LIMIT 1"))
 saved_signal_counts = sql("SELECT count(*) FROM signals")
 original = json.loads(sql("SELECT payload FROM candles WHERE symbol='BTC' AND interval='1m' AND finalized ORDER BY open_time LIMIT 1"))
@@ -42,3 +44,12 @@ assert same == saved_evaluation
 assert sql("SELECT count(*) FROM (SELECT config_id,symbol,interval,open_time,strategy,count(*) FROM signals GROUP BY 1,2,3,4,5 HAVING count(*) > 1) duplicates") == "0"
 assert int(sql("SELECT count(*) FROM signals")) >= int(saved_signal_counts)
 print("PASS: restart preserves evaluations and does not duplicate directional events")
+
+recovered_paper = get('/paper/account')['account']
+assert recovered_paper['activated_at'] == saved_paper['activated_at']
+assert recovered_paper['config'] == saved_paper['config']
+assert recovered_paper['sequence'] >= saved_paper['sequence']
+orders = json.loads(sql("SELECT coalesce(jsonb_agg(payload ORDER BY order_id),'[]') FROM paper_orders WHERE account_id='paper-default'"))
+assert orders[:len(saved_orders)] == saved_orders
+assert len({o['id'] for o in orders}) == len(orders)
+print('PASS: restart preserves paper account identity and immutable order/fill history')
