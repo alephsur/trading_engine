@@ -12,7 +12,7 @@ a la siguiente. No se activa ejecución real sin autorización expresa.
 - [x] API de salud, mercados, precios y logs estructurados.
 - [x] Tests unitarios, integración PostgreSQL y smoke E2E real.
 - [x] Dockerfile, Compose, CI, README y decisiones de arquitectura.
-- [ ] Verificar build y arranque de contenedores en un host con acceso a Docker.
+- [x] Verificar build y arranque de contenedores en GitHub Actions.
 
 Aceptación funcional: compilación, fmt, clippy y tests pasan; DB conserva eventos;
 `/health` llega a 200 con los cuatro mercados y devuelve 503 al caer PostgreSQL;

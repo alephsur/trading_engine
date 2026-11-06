@@ -17,15 +17,18 @@
 
 La validación local de PostgreSQL usó binarios de paquetes oficiales de Ubuntu,
 extraídos temporalmente sin instalar servicios ni modificar permisos del sistema.
-Compose y CI usan PostgreSQL 17; la ejecución de esa versión queda pendiente de CI.
+Compose y CI usan PostgreSQL 17; la integración también pasó en esa versión en CI.
 
 ## Límite de verificación
 
 El servicio Docker del equipo rechaza el acceso a `/var/run/docker.sock` y sudo
 requiere autenticación interactiva. Se ha validado el archivo Compose, pero no
 se ha ejecutado localmente el build de imagen ni `docker compose up`.
-CI incluye integración con PostgreSQL 17 y build de imagen. Su resultado debe
-comprobarse tras el push; no se considera aprobado solo por crear el workflow.
+La limitación local quedó cubierta por [GitHub Actions](https://github.com/alephsur/trading_engine/actions/runs/42195631969),
+con resultado **success** sobre el commit `38491e7`. Se verificaron formato,
+Clippy, tests, integración PostgreSQL 17, construcción de imagen, arranque con
+Compose y smoke E2E contra datos reales desde el contenedor. Después se detuvieron
+los servicios de CI. Este informe se actualiza en un commit documental posterior.
 
 No se ha simulado una desconexión de red externa ni un reinicio de órdenes:
 no hay órdenes en esta fase. La frescura y el bloqueo de modos no admitidos
