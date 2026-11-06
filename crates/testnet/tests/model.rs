@@ -156,6 +156,22 @@ fn close_is_reduce_only_and_never_opens_the_other_side() {
 }
 #[test]
 fn lost_partial_and_duplicate_fills_remain_explicit() {
+    for (status, expected) in [
+        ("scheduledCancel", true),
+        ("marginCanceled", true),
+        ("iocCancelRejected", true),
+        ("triggered", false),
+        ("futureCanceled", false),
+        ("futureRejected", false),
+    ] {
+        assert_eq!(
+            trading_testnet::executor::terminal(
+                &json!({"status":"order","order":{"status":status}})
+            ),
+            expected,
+            "{status}"
+        );
+    }
     let cloid = model::cloid("account", "command-01", 0);
     let mut status = json!({"status":"order","order":{"status":"open","order":{"cloid":cloid,"oid":42,"coin":"BTC","side":"B","origSz":"1","sz":"0.6"}}});
     let fill = json!({"oid":42,"tid":1,"coin":"BTC","side":"B","sz":"0.4","px":"100","fee":"0.018","feeToken":"USDC"});

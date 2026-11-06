@@ -5,6 +5,7 @@ use crate::{
     store,
 };
 use anyhow::{Result, ensure};
+use hypersdk::hypercore::types::OrderStatus;
 use rust_decimal::Decimal as D;
 use serde_json::{Value, json};
 use sqlx::PgPool;
@@ -146,14 +147,11 @@ fn observed_order(value: &Value) -> Option<&Value> {
     (value["status"] == "order").then_some(&value["order"]["order"])
 }
 pub fn terminal(value: &Value) -> bool {
-    let Some(s) = value["order"]["status"].as_str() else {
+    let Ok(status) = serde_json::from_value::<OrderStatus>(value["order"]["status"].clone()) else {
         return false;
     };
-    // Only documented terminal forms; new/unknown statuses stay blocked.
-    value["status"] == "order"
-        && (matches!(s, "filled" | "canceled" | "rejected")
-            || s.ends_with("Canceled")
-            || s.ends_with("Rejected"))
+    // Parse only known statuses. Trigger activation is not proof of execution.
+    value["status"] == "order" && !matches!(status, OrderStatus::Open | OrderStatus::Triggered)
 }
 /// Reconcile original quantity, remaining quantity and unique fills. No synthetic fills.
 pub fn reconcile_orders(observations: &[Observation], fills: &[Value]) -> Result<Value> {
