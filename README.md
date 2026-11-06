@@ -131,3 +131,11 @@ La fase 6 añade la interfaz en <http://localhost:3000/dashboard/> al arrancar
 Compose. Incluye mercados, velas, cuenta, posiciones, actividad y estado del motor.
 Los controles están deshabilitados por defecto; ver [DASHBOARD.md](DASHBOARD.md)
 para configurar la clave local, conocer las métricas y ejecutar las pruebas.
+
+## Integración testnet
+
+El ejecutable independiente `trading-testnet` incorpora órdenes de prueba acotadas,
+cancelaciones, cierres reduce-only y reconciliación persistente. El servidor y el
+dashboard permanecen PAPER. Configuración, límites y procedimiento en
+[TESTNET.md](TESTNET.md). La validación firmada contra el exchange está pendiente
+de una cuenta testnet financiada; las pruebas locales no la sustituyen.

@@ -1,0 +1,81 @@
+{
+  "source": "hyperliquid-python-sdk 0.24.0",
+  "cases": [
+    {
+      "action": {
+        "type": "order",
+        "orders": [
+          {
+            "a": 3,
+            "b": true,
+            "p": "100.01",
+            "s": "0.2",
+            "r": false,
+            "t": {
+              "limit": {
+                "tif": "Ioc"
+              }
+            },
+            "c": "0x11111111111111111111111111111111"
+          },
+          {
+            "a": 3,
+            "b": false,
+            "p": "97.02",
+            "s": "0.2",
+            "r": true,
+            "t": {
+              "trigger": {
+                "isMarket": true,
+                "triggerPx": "99",
+                "tpsl": "sl"
+              }
+            },
+            "c": "0x22222222222222222222222222222222"
+          },
+          {
+            "a": 3,
+            "b": false,
+            "p": "100.94",
+            "s": "0.2",
+            "r": true,
+            "t": {
+              "trigger": {
+                "isMarket": true,
+                "triggerPx": "103",
+                "tpsl": "tp"
+              }
+            },
+            "c": "0x33333333333333333333333333333333"
+          }
+        ],
+        "grouping": "normalTpsl"
+      },
+      "nonce": 1700000000000,
+      "expires": 1700000010000,
+      "signature": {
+        "r": "0x156eb37a7bf66eba2c616be4685294ef596c03847dd22c830268caa148333aa5",
+        "s": "0x47e62f6cd11f13f36bf060d77d9a1c517768282fc7b40fc515668a67504912cf",
+        "v": 27
+      }
+    },
+    {
+      "action": {
+        "type": "cancelByCloid",
+        "cancels": [
+          {
+            "asset": 3,
+            "cloid": "0x11111111111111111111111111111111"
+          }
+        ]
+      },
+      "nonce": 1700000000000,
+      "expires": 1700000010000,
+      "signature": {
+        "r": "0x2f9a29794487425175e8a0f1998b38ab508b1fa83b5e4fc6765a7d4bd1fb5f93",
+        "s": "0x3504050dd465cea36a70a47626fc569bd7a179ba9f1beda10e1999fa0d0c882a",
+        "v": 27
+      }
+    }
+  ]
+}

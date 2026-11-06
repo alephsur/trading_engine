@@ -65,11 +65,14 @@ aprobados localmente y en CI, incluido Docker. Ver `DASHBOARD.md` y `VALIDATION.
 
 ## Fase 7 — integración testnet
 
-- [ ] Reevaluar SDK, firma, nonces, límites y reglas oficiales.
-- [ ] Integrar órdenes testnet, cancelaciones y reconciliación.
-- [ ] Inyectar caídas, respuestas inciertas y fills parciales.
+- [x] Reevaluar SDK, firma, nonces, límites y reglas oficiales.
+- [x] Implementar órdenes testnet, cancelaciones y reconciliación en CLI aislado.
+- [x] Inyectar caídas, respuestas inciertas y fills parciales.
+- [ ] Validar órdenes firmadas, cancelación y cierre contra una cuenta testnet financiada.
 
 Aceptación: órdenes de prueba trazables, sin duplicados, recuperación demostrada.
+Implementación local disponible; aceptación externa pendiente de configuración
+de cuenta testnet. No se avanza a fase 8 hasta registrar ese resultado.
 
 ## Fase 8 — preparar LIVE sin activarlo
 

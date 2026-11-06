@@ -1,0 +1,22 @@
+[package]
+name = "trading-testnet"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+[dependencies]
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+rust_decimal.workspace = true
+sqlx.workspace = true
+trading-domain = { path = "../domain" }
+trading-paper = { path = "../paper" }
+trading-storage = { path = "../storage" }
+hypersdk = "=0.3.0"
+chrono = "0.4"
+sha2 = "0.10"
+hex = "0.4"
+zeroize = "1"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+dotenvy = "0.15"

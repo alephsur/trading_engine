@@ -1,8 +1,8 @@
-# Arquitectura — fase 5
+# Arquitectura — fases 1–7
 
 ## Componentes ejecutables
 
-Workspace Rust con siete crates:
+Workspace Rust con ocho crates:
 
 - `trading-domain`: universo permitido y validación de metadatos, mids, OHLCV,
   operaciones y snapshots de libro. Precios/cantidades `rust_decimal`, strings JSON.
@@ -13,10 +13,12 @@ Workspace Rust con siete crates:
 - `trading-backtest`: exportación de solo lectura, replay offline, métricas y separación temporal.
 - `trading-storage`: PostgreSQL, migraciones embebidas, escrituras idempotentes y consultas.
 - `trading-server`: Axum, supervisor, recuperación histórica concurrente y frescura.
+- `trading-testnet`: CLI de integración aislado, firma SDK, nonces persistentes y reconciliación.
 
 El adaptador descubre de nuevo los índices de BTC, ETH, SOL y HYPE en cada conexión.
-Ausencia, duplicados o mercados retirados impiden preparar el feed. No se cargan
-claves, no se firman órdenes y no existe un cliente de ejecución real. PAPER simula con datos públicos; LIVE, TESTNET y BACKTEST se rechazan.
+Ausencia, duplicados o mercados retirados impiden preparar el feed. El servidor PAPER no carga
+claves ni firma órdenes. PAPER simula con datos públicos; ese servidor rechaza LIVE,
+TESTNET y BACKTEST. El CLI testnet de fase 7 es independiente y opt-in.
 
 ## Ingesta y consistencia
 
@@ -100,8 +102,9 @@ expuestas por HTTP. Las tablas de alta frecuencia aún no tienen retención auto
 ## SDK y evolución
 
 Se mantiene el adaptador público pequeño. El SDK oficial revisado en fase 1 fue
-`hyperliquid_rust_sdk` 0.6.0, con firma Alloy y WebSocket 0.20. Se reevaluará antes
-de integrar órdenes testnet en fase 7; no se afirma compatibilidad de ejecución.
+`hyperliquid_rust_sdk` 0.6.0, con firma Alloy y WebSocket 0.20. La reevaluación de
+fase 7 selecciona `hypersdk` 0.3.0 por sus tipos y firma con expiración, contrastada
+contra vectores del SDK Python oficial. No se reutiliza su transporte genérico.
 
 La fase 4 añade una cuenta PAPER transaccional y un trabajador separado de ingesta
 que revisa cierres y propuestas cada segundo. El histórico de fills reconstruye
@@ -145,3 +148,23 @@ de backtesting sin cambiar la contabilidad decimal. Instantáneas PostgreSQL con
 repeatable-read, respuestas acotadas y límites de escalado documentados en
 [DASHBOARD.md](DASHBOARD.md). Prometheus y contadores locales complementan los
 logs estructurados y la auditoría persistente de errores.
+
+## Fase 7 — límite entre simulación y exchange
+
+El CLI solo escribe al endpoint fijo testnet; la red se fija también en la firma.
+No enlaza el scanner mainnet a órdenes testnet ni añade controles al dashboard.
+La clave de una API wallet dedicada procede de un archivo privado externo; las
+consultas usan la dirección principal de la cuenta. Firmas breves, nonces por
+firmante y cloids por intención se guardan antes de transmitir.
+
+Una reclamación transaccional permite un único intento de POST. Se acepta el
+coste de dejar un resultado incierto si el proceso muere entre reclamar y enviar;
+no se disfraza ese estado como exactamente-una-vez. La reconciliación consulta
+órdenes, fills y posición; discrepancias bloquean entradas. El exchange no ofrece
+un snapshot transaccional conjunto, por lo que se repite la lectura sin fabricar
+resultados. Los dobles de transporte existen para inyectar fallos en pruebas.
+
+Las tablas `testnet_*` aíslan cuentas y registros de PAPER. El ensayo admite una
+entrada IOC con protecciones adjuntas, cierre IOC/ALO reduce-only y cancelación
+por cloid; no es todavía un motor autónomo de estrategias sobre testnet. Límites
+y aceptación externa pendiente en [TESTNET.md](TESTNET.md).

@@ -1,3 +1,37 @@
+# Verificación — fase 7 (aceptación externa pendiente)
+
+## Resultado local
+
+- 60 pruebas Rust aprobadas: 52 sin PostgreSQL y 8 con PostgreSQL, incluidos schemas
+  aislados para los dos nuevos escenarios de persistencia/reconciliación testnet.
+- Firmas exactas de bracket y cancelación contrastadas con vectores independientes
+  de `hyperliquid-python-sdk` 0.24.0, usando exclusivamente una clave dummy pública.
+- Rechazo de transferencias, expiración inválida, activos no permitidos, precios o
+  cantidades fuera de precisión, límites de tamaño/riesgo, posiciones preexistentes
+  y datos obsoletos. Los cierres IOC/ALO son reduce-only.
+- Concurrencia: una preparación por ID y nonces distintos; fallo anterior al POST
+  produce cero envíos. Pérdida de respuesta o de persistencia del ACK deja estado
+  incierto; ni reintentos concurrentes ni reinicio generan un segundo POST.
+- Cuenta principal distinta del firmante, vinculación de API wallet, expiración
+  sin envío y bloqueo persistente por pérdida diaria. Una intención incierta
+  bloquea entradas nuevas aunque se cambie el identificador.
+- Fills parciales/duplicados, discrepancias de cantidad y posición, persistencia
+  idempotente y rechazo de replay conflictivo. `unknownOid` conserva incertidumbre.
+- Consulta real de solo lectura a testnet: BTC, ETH, SOL y HYPE disponibles con
+  índices descubiertos dinámicamente (3, 4, 0 y 135 en esta consulta del 6-11-2026).
+- Rustfmt, Clippy y smoke de backtesting aprobados. El nuevo SDK y su lockfile no
+  cambian los resultados deterministas previos. El CI incluye el smoke público
+  testnet, sin claves ni escrituras firmadas.
+
+**Pendiente:** cuenta testnet financiada/API wallet aprobada y configuración local
+para verificar aceptación remota, ejecución, cancelación y cierre. Ningún fill de
+las pruebas anteriores se presenta como una operación auténtica del exchange.
+La fase 7 permanece abierta en `ROADMAP.md`; no se inicia fase 8.
+
+Resultado de GitHub Actions: pendiente de esta publicación.
+
+---
+
 # Verificación — fase 6
 
 ## Resultado local

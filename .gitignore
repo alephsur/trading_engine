@@ -7,3 +7,6 @@ __pycache__/
 /web/dist/
 /web/test-results/
 /web/playwright-report/
+.env.*
+!.env.example
+!.env.testnet.example
