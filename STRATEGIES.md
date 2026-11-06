@@ -83,13 +83,15 @@ avance de cursor comparten una transacción. Un fallo revierte el lote entero.
 Cada evaluación guarda ventana inicial/final, huella de entrada, indicadores,
 configuración y decisiones. Las señales direccionales tienen un `event_id`
 monótono de base de datos y clave única por configuración, activo, intervalo,
-cierre y estrategia. Son eventos internos persistentes; todavía no tienen un
-consumidor de ejecución. Los identificadores pueden tener huecos por rollbacks.
+cierre y estrategia. Son eventos internos persistentes. Desde la fase 4 un consumidor
+PAPER toma decisiones separadas y auditadas. Los identificadores pueden tener huecos
+por rollbacks y confirmarse en distinto orden entre productores.
 
 **Todas las señales llevan `analysis_only:true`**, incluidas las de recuperación
 histórica. Los tiempos de creación en DB no convierten una señal antigua en una
-entrada actual. La fase 4 deberá aplicar frescura, riesgo, sizing y reconciliación.
-No se crean órdenes, stops, posiciones ni operaciones simuladas en esta fase.
+entrada actual. El consumidor aplica frescura, riesgo, sizing y reconciliación antes
+de simular una orden. Las estrategias no crean directamente órdenes ni posiciones.
+Ver [PAPER.md](PAPER.md).
 
 Los endpoints `/strategies`, `/evaluations` y `/signals` muestran la configuración
 activa. Las versiones antiguas siguen disponibles en las tablas de auditoría.

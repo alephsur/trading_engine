@@ -21,7 +21,7 @@ El sizing usa el peor nivel del lado ejecutable, redondeo adverso, comisión de
 entrada/salida y slippage de salida. También respeta el presupuesto diario restante.
 Se reduce la cantidad a `szDecimals` y se rechaza si no alcanza el mínimo de
 10 USDC simultáneamente con los límites. La exposición no se compensa entre long
- y short. Un gap puede provocar pérdidas superiores al riesgo previsto del stop.
+y short. Un gap puede provocar pérdidas superiores al riesgo previsto del stop.
 
 `PAPER_CONFIG_PATH` permite cargar un JSON completo al arrancar; ver
 [config/paper.example.json](config/paper.example.json). Se pueden endurecer los

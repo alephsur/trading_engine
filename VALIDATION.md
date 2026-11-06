@@ -20,9 +20,12 @@
   activar la cuenta se rechazaron. Un reinicio conservó esa cuenta y su orden sin duplicarla.
 - Formato, Clippy sin advertencias y configuración Compose válidos.
 
-La construcción/arranque Docker y recuperación completa se verifican en GitHub
-Actions: el socket Docker local sigue sin permitir acceso. Resultado de CI pendiente
-hasta terminar la ejecución del commit de esta fase.
+[GitHub Actions: fase 4](https://github.com/alephsur/trading_engine/actions/runs/42207830992)
+terminó con **success** sobre `720052f`: formato, Clippy, las 37 pruebas, PostgreSQL 17,
+construcción/arranque Docker, smoke con datos reales y reinicio con reparación de
+histórico y conservación de la cuenta PAPER y su historial de órdenes/fills.
+El socket Docker local sigue sin permitir acceso; esta comprobación se ejecutó en CI.
+El resultado se registra en un commit posterior que solo modifica documentación.
 
 ## Alcance y límites
 
