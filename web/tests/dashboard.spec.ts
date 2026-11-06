@@ -32,7 +32,10 @@ test("dashboard shows data, confirms pause, handles outages and fits mobile", as
           HYPE: "41.08",
         },
       };
-    else if (path.endsWith("/candles")) value = { candles: candles() };
+    else if (path.endsWith("/candles"))
+      value = {
+        candles: candles().map((candle) => ({ candle, closed: true })),
+      };
     else if (path.endsWith("/evaluations")) value = { evaluations: [] };
     else if (path.endsWith("/paper/control")) {
       pausedRequest = true;
@@ -47,6 +50,9 @@ test("dashboard shows data, confirms pause, handles outages and fits mobile", as
   });
   const browserErrors: string[] = [];
   page.on("pageerror", (e) => browserErrors.push(e.message));
+  page.on("console", (m) => {
+    if (m.type() === "error") browserErrors.push(m.text());
+  });
   await page.goto("./");
   await expect(page.getByText("Sistema operativo")).toBeVisible();
   await expect(page.getByText("Sin posiciones abiertas")).toBeVisible();
@@ -108,6 +114,9 @@ test("real service serves bundled UI and persisted observations", async ({
   expect(state.monitor.samples).toBeGreaterThan(0);
   const browserErrors: string[] = [];
   page.on("pageerror", (e) => browserErrors.push(e.message));
+  page.on("console", (m) => {
+    if (m.type() === "error") browserErrors.push(m.text());
+  });
   await page.goto("./");
   await expect(
     page.getByRole("heading", { name: "Vista general" }),
@@ -115,6 +124,31 @@ test("real service serves bundled UI and persisted observations", async ({
   await expect(page.getByRole("img", { name: "Velas de BTC" })).toBeVisible({
     timeout: 20000,
   });
+  const canvas = page
+    .getByRole("img", { name: "Velas de BTC" })
+    .locator("canvas");
+  await expect(canvas).toBeVisible();
+  await expect
+    .poll(() =>
+      canvas.evaluate((node: HTMLCanvasElement) => {
+        const ctx = node.getContext("2d")!;
+        const pixels = ctx.getImageData(0, 0, node.width, node.height).data;
+        let visible = 0;
+        for (let i = 3; i < pixels.length; i += 4)
+          if (pixels[i]! > 0) visible++;
+        return visible;
+      }),
+    )
+    .toBeGreaterThan(1000);
+  await page.screenshot({
+    path: "test-results/dashboard-real.png",
+    fullPage: true,
+    animations: "disabled",
+  });
+  await page.getByRole("button", { name: "Mercados", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Última evaluación de estrategias" }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Sistema", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Telemetría del proceso" }),

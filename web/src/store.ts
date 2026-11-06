@@ -63,11 +63,15 @@ export const useDashboard = defineStore("dashboard", () => {
     marketError.value = "";
     try {
       const [c, e] = await Promise.all([
-        request<{ candles: Candle[] }>("/candles" + query),
+        request<{ candles: { candle: Candle; closed: boolean }[] }>(
+          "/candles" + query,
+        ),
         request<{ evaluations: Evaluation[] }>("/evaluations" + query),
       ]);
       if (id !== generation) return;
-      candles.value = c.candles;
+      candles.value = c.candles
+        .filter((row) => row.closed)
+        .map((row) => row.candle);
       evaluations.value = e.evaluations;
       marketReceived.value = Date.now();
     } catch {

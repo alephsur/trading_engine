@@ -42,7 +42,12 @@ describe("data quality and operator commands", () => {
         return new Response(
           JSON.stringify(
             url.includes("candles")
-              ? { candles: [{ t: 42 }] }
+              ? {
+                  candles: [
+                    { candle: { t: 42 }, closed: true },
+                    { candle: { t: 43 }, closed: false },
+                  ],
+                }
               : { evaluations: [] },
           ),
         );
@@ -52,9 +57,14 @@ describe("data quality and operator commands", () => {
     const old = s.market();
     s.symbol = "ETH";
     await s.market();
-    resolveOld(new Response(JSON.stringify({ candles: [{ t: 1 }] })));
+    resolveOld(
+      new Response(
+        JSON.stringify({ candles: [{ candle: { t: 1 }, closed: true }] }),
+      ),
+    );
     await old;
     expect(s.candles[0]?.t).toBe(42);
+    expect(s.candles).toHaveLength(1);
     expect(count).toBe(3);
   });
   it("breaks chart lines across missing observations", () => {
