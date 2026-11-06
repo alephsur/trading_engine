@@ -14,5 +14,6 @@ trading-storage = { path = "../storage" }
 trading-market-data = { path = "../market-data" }
 axum = "0.8"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+serde.workspace = true
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }

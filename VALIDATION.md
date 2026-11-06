@@ -1,4 +1,36 @@
-# Verificación — fase 1
+# Verificación — fase 2
+
+## Resultado local
+
+- 16 tests pasan: 14 unitarios y 2 de integración PostgreSQL. Se comprueban
+  decimales, validación OHLC/libro, cierres, reintentos HTTP 429/5xx, respuestas
+  de activo incorrecto, páginas acotadas, huecos internos, replay y persistencia.
+- `cargo fmt --all -- --check` y Clippy con `-D warnings`: correctos.
+- Migración 0002 aplicada sobre la DB ya existente de fase 1; tests de mercado
+  usan además un esquema PostgreSQL aislado y lo eliminan al terminar.
+- Smoke real: cuatro mercados con precios, libros y operaciones; 100 velas cerradas
+  por cada una de las 16 series; consultas inválidas devuelven 400.
+- Recuperación real: servicio detenido, eliminación de una vela histórica BTC/1m,
+  reinicio y comparación del JSON recuperado con el original: idénticos.
+- La recuperación mantiene el ancla persistida y el resultado final sin huecos.
+
+Docker sigue sin permiso local de acceso al socket. El workflow ejecuta integración
+PostgreSQL 17, build/arranque Compose, smoke real y una prueba de reinicio que elimina
+y recupera una vela en la DB desechable de CI. Resultado remoto pendiente del push.
+
+## Límites explícitos
+
+La cobertura histórica de velas empieza en las 100 velas iniciales de cada serie.
+Los huecos posteriores se buscan hasta ese ancla; los que salen de la ventana
+recuperable del exchange permanecen sin resolver. El test unitario verifica el
+límite de paginación/ventana, no una caída real de más de 5.000 intervalos.
+Operaciones recientes pueden recuperar parte de una caída, pero no se garantiza
+la cinta completa. Tampoco se reconstruyen libros intermedios perdidos. No hay
+estrategias, órdenes ni posiciones en esta fase.
+
+---
+
+## Historial de verificación — fase 1
 
 ## Resultado local
 

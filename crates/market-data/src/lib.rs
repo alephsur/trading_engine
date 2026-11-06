@@ -7,37 +7,27 @@ use tokio::{
     time::{interval, timeout},
 };
 use tokio_tungstenite::{connect_async, tungstenite::Message};
-use trading_domain::{ListedMarket, Metadata, select_markets};
+use trading_domain::{SYMBOLS, data::INTERVALS};
 
 const INFO: &str = "https://api.hyperliquid.xyz/info";
 const WS: &str = "wss://api.hyperliquid.xyz/ws";
 
-pub async fn metadata() -> Result<Vec<ListedMarket>> {
-    let meta: Metadata = reqwest::Client::builder()
-        .timeout(Duration::from_secs(10))
-        .build()?
-        .post(INFO)
-        .json(&json!({"type":"meta"}))
-        .send()
-        .await?
-        .error_for_status()?
-        .json()
-        .await?;
-    select_markets(meta)
-}
+pub mod history;
 
 /// One read-only session. The supervisor owns reconnects and health state.
 pub async fn stream(tx: mpsc::Sender<serde_json::Value>) -> Result<()> {
     let (mut ws, _) = timeout(Duration::from_secs(10), connect_async(WS)).await??;
-    timeout(
-        Duration::from_secs(5),
-        ws.send(Message::Text(
-            json!({"method":"subscribe","subscription":{"type":"allMids"}})
-                .to_string()
-                .into(),
-        )),
-    )
-    .await??;
+    for subscription in subscriptions() {
+        timeout(
+            Duration::from_secs(5),
+            ws.send(Message::Text(
+                json!({"method":"subscribe","subscription":subscription})
+                    .to_string()
+                    .into(),
+            )),
+        )
+        .await??;
+    }
     let mut heartbeat = interval(Duration::from_secs(20));
     loop {
         tokio::select! {
@@ -55,5 +45,29 @@ pub async fn stream(tx: mpsc::Sender<serde_json::Value>) -> Result<()> {
                 _ => {}
             }
         }
+    }
+}
+
+pub fn subscriptions() -> Vec<serde_json::Value> {
+    let mut subscriptions = vec![json!({"type":"allMids"})];
+    for symbol in SYMBOLS {
+        subscriptions.push(json!({"type":"trades","coin":symbol}));
+        subscriptions.push(json!({"type":"l2Book","coin":symbol}));
+        for interval in INTERVALS {
+            subscriptions.push(json!({"type":"candle","coin":symbol,"interval":interval}));
+        }
+    }
+    subscriptions
+}
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn subscriptions_are_unique_and_public() {
+        let subscriptions = super::subscriptions();
+        let unique: std::collections::BTreeSet<_> =
+            subscriptions.iter().map(ToString::to_string).collect();
+        assert_eq!(subscriptions.len(), 25);
+        assert_eq!(unique.len(), 25);
+        assert!(subscriptions.iter().all(|s| s.get("user").is_none()));
     }
 }

@@ -1,7 +1,8 @@
 # AI Trading Engine
 
-Primera fase funcional en Rust: PostgreSQL, metadatos de perpetuos BTC/ETH/SOL/HYPE,
-precios públicos de Hyperliquid por WebSocket y API de salud. No ejecuta ni simula
+Fase 2 funcional en Rust: PostgreSQL, perpetuos BTC/ETH/SOL/HYPE, precios, libros,
+operaciones y velas 1m/5m/15m/1h de Hyperliquid. Incluye recuperación histórica
+y API de salud. No ejecuta ni simula
 órdenes todavía. No necesita cuenta, wallet ni credenciales de Hyperliquid.
 
 ## Arranque con Docker
@@ -17,8 +18,8 @@ docker compose logs -f engine
 ```
 
 El primer build tarda. Las migraciones se ejecutan automáticamente. `/health`
-devuelve 503 hasta disponer de PostgreSQL y precios recientes de los cuatro
-mercados. `docker compose down` detiene servicios conservando el volumen.
+devuelve 503 hasta disponer de PostgreSQL, precios y libros recientes de los cuatro
+mercados y 100 velas cerradas por serie (aproximadamente 40–60 segundos iniciales). `docker compose down` detiene servicios conservando el volumen.
 Las credenciales incluidas son exclusivamente para desarrollo local.
 
 ## Desarrollo local
@@ -51,13 +52,28 @@ peticiones autenticadas. Los índices de activos se descubren al conectar.
 ## API
 
 - `GET /livez`: proceso vivo, independiente del estado de la DB/feed.
-- `GET /health`: 200 listo o 503 degradado; incluye DB, frescura y ejecución desactivada.
+- `GET /health`: 200 listo o 503 degradado; incluye DB, frescura, recuperación histórica y ejecución desactivada.
 - `GET /markets`: los cuatro mercados, precisión, leverage máximo e índice descubierto.
 - `GET /prices`: precios como strings decimales, frescura y edad desde recepción local.
 
+- `GET /candles?symbol=BTC&interval=1m&limit=100`: velas cerradas, orden descendente.
+  Añade `closed_only=false` para incluir provisionales, cada una con su flag `closed`.
+- `GET /trades?symbol=BTC&limit=100`: operaciones deduplicadas, con hora del exchange.
+- `GET /book?symbol=BTC`: último snapshot (hasta 20 niveles/lado) y frescura.
+- `GET /data-status`: cobertura de las 16 series y límites de completitud.
+
+Símbolos permitidos: BTC, ETH, SOL, HYPE. Intervalos: 1m, 5m, 15m, 1h. Límites: 1–500.
+La recuperación conserva el ancla histórica tras reinicios y repara huecos internos.
+Una vela solo queda cerrada después de confirmarse por HTTP; no se cierra por
+inactividad del stream. Huecos fuera de la ventana de 5.000 velas del exchange
+siguen visibles y bloquean la preparación: requieren datos históricos verificables,
+no un reseteo silencioso. Operaciones antiguas y cambios intermedios del libro
+pueden faltar tras una caída; la API no declara esos históricos completos.
+
 Los precios antiguos pueden seguir visibles, siempre acompañados de `fresh:false`.
 Son mids indicativos, no cotizaciones ejecutables. Los eventos se conservan en
-`events` con tipos `startup`, `metadata` y `mids`. Esta fase no aplica retención:
+`events` con tipos `startup`, `metadata`, `mids`, `capture_session` y `candle_recovery`.
+Velas, operaciones y libros tienen tablas propias. Esta fase no aplica retención:
 una ejecución prolongada aumentará el volumen de la base de datos.
 
 ## Verificación
@@ -74,8 +90,11 @@ docker compose config --quiet
 La prueba de integración requiere una base de pruebas: aplica migraciones y escribe
 un evento. Está ignorada en la suite sin DB y se ejecuta explícitamente en CI.
 El smoke E2E usa el servidor arrancado y datos reales; requiere Internet.
-CI valida formato, lint, tests, integración PostgreSQL y construcción Docker.
+CI valida formato, lint, tests, integración PostgreSQL, construcción y arranque Docker,
+las 16 series con datos reales y recuperación tras reiniciar. `scripts/recovery_smoke.py`
+elimina una vela de la base desechable de Compose para comprobar su recuperación;
+**no lo ejecutes contra una base que quieras conservar intacta**.
 
 Consulta [arquitectura](ARCHITECTURE.md), [roadmap](ROADMAP.md) y
-[verificación de esta entrega](VALIDATION.md). Las siguientes fases añaden velas,
+[verificación de esta entrega](VALIDATION.md). Las siguientes fases añaden
 estrategias, riesgo, simulación y dashboard; no están implementadas en esta entrega.

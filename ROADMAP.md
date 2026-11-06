@@ -20,12 +20,13 @@ el servicio vuelve a estar listo tras recuperarse DB. Ver `VALIDATION.md`.
 
 ## Fase 2 — datos de mercado completos
 
-- [ ] Persistir velas 1m/5m/15m/1h con claves idempotentes y distinguir cierres.
-- [ ] Ingerir operaciones y order book con tiempo de exchange.
-- [ ] Recuperar huecos tras reconectar con límites y reintentos acotados.
-- [ ] Tests de duplicados, huecos, eventos fuera de orden y reinicio.
+- [x] Persistir velas 1m/5m/15m/1h con claves idempotentes y distinguir cierres.
+- [x] Ingerir operaciones y order book con tiempo de exchange.
+- [x] Recuperar huecos tras reconectar con límites y reintentos acotados.
+- [x] Tests de duplicados, huecos, eventos fuera de orden y reinicio.
 
-Aceptación: históricos y streams coherentes, sin duplicados ni señales con velas abiertas.
+Aceptación: históricos y streams coherentes, sin duplicados; API separa velas provisionales de cierres confirmados. Operaciones y
+libros conservan límites explícitos de cobertura; no se fabrican históricos perdidos.
 
 ## Fase 3 — indicadores y señales
 

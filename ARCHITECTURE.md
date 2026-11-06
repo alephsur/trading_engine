@@ -1,74 +1,101 @@
-# Arquitectura — fase 1
+# Arquitectura — fase 2
 
-## Alcance ejecutable
+## Componentes ejecutables
 
-Workspace Rust con cuatro crates que tienen responsabilidades reales:
+Workspace Rust con cuatro crates:
 
-- `trading-domain`: universo permitido, metadatos y validación de precios con `rust_decimal`.
-- `trading-market-data`: HTTP y WebSocket públicos de Hyperliquid, sin claves ni firma.
-- `trading-storage`: PostgreSQL, migraciones SQLx embebidas y registro de eventos.
-- `trading-server`: API Axum, supervisión de conexión, frescura y apagado ordenado.
+- `trading-domain`: universo permitido y validación de metadatos, mids, OHLCV,
+  operaciones y snapshots de libro. Precios/cantidades `rust_decimal`, strings JSON.
+- `trading-market-data`: cliente HTTP público, pacing/reintentos y WebSocket con
+  25 suscripciones: mids + cuatro libros + cuatro streams de operaciones + 16 velas.
+- `trading-storage`: PostgreSQL, migraciones embebidas, escrituras idempotentes y consultas.
+- `trading-server`: Axum, supervisor, recuperación histórica concurrente y frescura.
 
-Flujo actual: metadatos → validación del universo → persistencia → suscripción
-`allMids` → validación de los cuatro precios → persistencia → publicación en API.
-Los índices se calculan a partir de la posición en `universe` en cada conexión.
-Un mercado ausente, duplicado, inválido o retirado impide declarar el feed listo.
-Los mids son precios indicativos; no son fills ni precios garantizados de ejecución.
+El adaptador descubre de nuevo los índices de BTC, ETH, SOL y HYPE en cada conexión.
+Ausencia, duplicados o mercados retirados impiden preparar el feed. No se cargan
+claves, no se firman órdenes y no existe un cliente de ejecución. PAPER sigue
+significando lectura pública; LIVE, TESTNET y BACKTEST se rechazan.
 
-## Decisiones
+## Ingesta y consistencia
 
-Se usa un adaptador HTTP/WebSocket pequeño en vez del SDK de ejecución. Se revisó
-el SDK oficial `hyperliquid_rust_sdk` 0.6.0: incorpora Alloy y firma de órdenes,
-reqwest 0.12 y tokio-tungstenite 0.20. La última actualización devuelta por GitHub
-en esta revisión es del 2025-10-21. No se afirma compatibilidad de ejecución:
-se reevaluará con pruebas de testnet en fase 7. El protocolo público cubre esta
-entrega sin introducir credenciales ni dependencias de firma.
+WebSocket y recuperación HTTP se ejecutan concurrentemente. El canal interno está
+acotado a 256 mensajes. Las escrituras se confirman antes de publicar estado.
+PostgreSQL impone un timeout de 5 segundos por sentencia. El supervisor revalida
+metadatos tras errores, reconecta con backoff de 1–30 segundos y heartbeat de 20 s.
 
-Los importes usan Decimal y se serializan como strings, sin conversiones a float.
-Los eventos llevan una secuencia PostgreSQL y hora de recepción del servidor.
-`allMids` no aporta aquí una hora de exchange: la frescura mide recepción local,
-no latencia verificable del exchange. Cada snapshot completo se confirma en DB
-antes de publicarse. El canal interno tiene capacidad limitada (32 mensajes).
-No hay promesa de recuperar ticks perdidos: el siguiente snapshot restablece
-precios actuales; velas y recuperación histórica pertenecen a fase 2.
+- `candles`: clave `(symbol, interval, open_time)`, contenido OHLCV decimal y flag
+  `finalized`. Las actualizaciones WS son provisionales; un mensaje con menos o
+  igual número de operaciones no sustituye uno más avanzado. HTTP confirma el
+  cierre solo después del final del intervalo y 2 segundos de margen. Una vela
+  finalizada es inmutable frente a replay WS/HTTP. No se inventan velas ausentes.
+- `trades`: clave `(symbol, exchange_time, trade_id)`, porque `tid` solo no es
+  globalmente único. Duplicados no crean filas nuevas. No se almacenan direcciones
+  de compradores/vendedores: no son necesarias para este scanner.
+- `books`: snapshots de hasta 20 niveles por lado, clave `(symbol, exchange_time)`.
+  El libro actual se selecciona por mayor tiempo de exchange; un mensaje atrasado
+  puede conservarse en el histórico sin reemplazar el estado más reciente.
+- `candle_coverage`: ancla inicial persistente, extremo de la última comprobación
+  y contador de huecos. El arranque siguiente no desplaza el ancla para ocultarlos.
+- `events`: arranque, metadatos, mids, inicio de sesiones y resultado de recuperación.
 
-El supervisor revalida metadatos al reconectar, aplica backoff 1–30 segundos y
-heartbeats cada 20 segundos. Los timeouts son 10 segundos para HTTP/conexión,
-5 para escrituras y 15 para ausencia de precios completos. La salud comprueba DB
-y datos recientes. Fallos de persistencia invalidan la sesión; no se mantienen
-colas ilimitadas. El reintento vuelve a 1 segundo tras una sesión estable de 60 s.
+Las validaciones comprueban activos, intervalos, límites temporales de velas,
+OHLC consistente, cantidades no negativas y libros ordenados/no cruzados. Los
+errores de parsing o almacenamiento invalidan la sesión. El cierre no se decide
+por el mero paso del reloj sobre un último snapshot WS potencialmente incompleto.
 
-`/livez` indica proceso vivo; `/health` devuelve 503 cuando no está preparado.
-La API expone solo lecturas y escucha en loopback por defecto. Compose también
-publica únicamente en loopback. Los logs son JSON. PostgreSQL es obligatorio al
-arrancar: un fallo inicial termina el proceso. Tras el arranque el supervisor
-recupera las sesiones fallidas automáticamente.
+## Recuperación
 
-Solo se acepta `TRADING_MODE=PAPER`. En esta fase PAPER significa lectura pública:
-aún no simula órdenes. No existe cliente de ejecución, endpoint de órdenes ni
-carga de claves. LIVE, TESTNET y BACKTEST se rechazan explícitamente.
+En el primer arranque se solicitan 100 velas cerradas por activo/intervalo. En
+reconexiones y cada 60 segundos se buscan TODOS los huecos desde el ancla, no
+solo desde la vela más reciente. Las peticiones abarcan como máximo 500 velas.
+Se respeta la ventana del exchange de 5.000 velas, con margen de dos; los huecos
+más antiguos permanecen registrados y bloquean `history_ready`. La consulta
+histórica permite ver datos parciales mientras el endpoint de salud siga degradado.
 
-## Evolución prevista
+Un cliente HTTP compartido limita los comienzos de petición a uno cada 2 segundos.
+Cada consulta pública admite hasta tres intentos ante fallos de transporte,
+429 y 5xx; otros 4xx fallan inmediatamente. Los timeouts HTTP son 10 segundos.
+Con páginas de hasta 500 velas, el ritmo queda por debajo del presupuesto oficial
+por IP en operación propia; otras aplicaciones de la misma IP comparten el límite.
 
-Los seis componentes lógicos (scanner, validación de riesgo, sizing, executor,
-logger y monitor de equity) se introducirán cuando tengan comportamiento y tests.
-El pipeline futuro será MarketData → Signal → Validation → RiskAssessment →
-Sizing → Order → Fill → PositionMonitoring → Exit → Reporting. Sus transiciones
-necesitarán identidades, idempotencia, transacciones y recuperación persistente.
-La tabla actual es un diario de ingesta, no un motor de event sourcing completo.
+Al reconectar se consultan también `recentTrades` y se recibe un nuevo libro WS.
+No hay garantía de reconstruir todas las operaciones perdidas ni los snapshots
+intermedios del libro. La API publica `trade_history_complete:false` y
+`book_history_complete:false`; cada nueva sesión deja un evento de discontinuidad.
+No se debe usar ese histórico parcial como si fuera una cinta de mercado completa.
 
-Riesgo será independiente de estrategias y de IA. Fase 4 aplicará los valores
-iniciales: 10.000 USDC, 0,25% por operación, 1% pérdida diaria, dos posiciones,
-20% nocional, 1x y stop obligatorio. Ningún ajuste desde estrategias o LLM podrá
-anular límites. El adaptador LIVE será separado y seguirá desactivado sin
-configuración y autorización explícitas.
+## Salud y API
 
-## Referencias oficiales consultadas
+`/livez` indica proceso vivo. `/health` exige DB accesible, mids recibidos hace menos
+de 15 segundos, libros de los cuatro activos con hora de exchange reciente y una
+comprobación histórica completa realizada hace menos de 180 segundos. Se toleran
+hasta 5 segundos de diferencia futura del reloj para libros/operaciones; se requiere
+un reloj del sistema sincronizado. En startup/reconexión se invalida el estado
+histórico hasta completar la recuperación. Mids no incluye timestamp del exchange:
+su frescura solo mide recepción local.
+
+`/candles` devuelve únicamente velas finalizadas por defecto; `closed_only=false`
+permite inspeccionar las provisionales. `/trades`, `/book` y `/data-status` exponen
+los datos persistidos y sus límites. Límites de consulta: 1–500 filas, orden más
+reciente primero. El servicio escucha en loopback por defecto y no tiene escrituras
+expuestas por HTTP. Las tablas de alta frecuencia aún no tienen retención automática.
+
+## SDK y evolución
+
+Se mantiene el adaptador público pequeño. El SDK oficial revisado en fase 1 fue
+`hyperliquid_rust_sdk` 0.6.0, con firma Alloy y WebSocket 0.20. Se reevaluará antes
+de integrar órdenes testnet en fase 7; no se afirma compatibilidad de ejecución.
+
+La fase 3 añadirá indicadores, Strategy y señales sobre cierres confirmados. Riesgo,
+sizing, PaperExecutor y posiciones llegarán en fase 4, independientes de estrategias
+u opiniones de IA. Sus máquinas de estados necesitarán idempotencia transaccional
+y recuperación de órdenes: las tablas actuales no son ese motor de ejecución.
+
+## Referencias oficiales
 
 - [Metadatos perpetuos](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals)
-- [Suscripciones WebSocket](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/websocket/subscriptions)
+- [Tipos WebSocket e identidad de operaciones](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/websocket/subscriptions)
+- [Candle snapshot y ventana histórica](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint#candle-snapshot)
+- [Límites de uso](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/rate-limits-and-user-limits)
 - [Heartbeats](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/websocket/timeouts-and-heartbeats)
-- [SDK Rust oficial](https://github.com/hyperliquid-dex/hyperliquid-rust-sdk)
-
-Precisión de órdenes, mínimos negociables, límites de uso, nonces y reglas de
-firma se verificarán nuevamente antes de implementar sizing y ejecución.
+- [SDK oficial: recentTrades](https://github.com/hyperliquid-dex/hyperliquid-rust-sdk/blob/master/src/info/info_client.rs)

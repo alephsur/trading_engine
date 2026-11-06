@@ -1,8 +1,11 @@
+mod api;
+mod recovery;
 use anyhow::{Result, ensure};
 use axum::{Json, Router, extract::State, http::StatusCode, routing::get};
 use serde_json::{Value, json};
 use sqlx::PgPool;
 use std::{
+    collections::BTreeMap,
     sync::Arc,
     time::{Duration, Instant},
 };
@@ -14,25 +17,39 @@ struct Feed {
     prices: Value,
     last_update: Option<Instant>,
     connected: bool,
+    books: BTreeMap<String, i64>,
+    history_ready: bool,
+    last_recovery: Option<Instant>,
 }
 #[derive(Clone)]
 struct App {
     pool: PgPool,
     feed: Arc<RwLock<Feed>>,
+    client: Arc<trading_market_data::history::PublicClient>,
 }
 
 fn validate_mode(mode: &str) -> Result<()> {
-    ensure!(
-        mode == "PAPER",
-        "phase 1 supports PAPER read-only mode only"
-    );
+    ensure!(mode == "PAPER", "only PAPER read-only mode is supported");
     Ok(())
+}
+fn book_recent(time: i64) -> bool {
+    let age = trading_domain::data::now_ms() - time;
+    (-5_000..15_000).contains(&age)
 }
 fn fresh(feed: &Feed) -> bool {
     feed.connected
         && feed
             .last_update
             .is_some_and(|t| t.elapsed() < Duration::from_secs(15))
+        && trading_domain::SYMBOLS
+            .iter()
+            .all(|s| feed.books.get(*s).is_some_and(|t| book_recent(*t)))
+}
+fn history_ready(feed: &Feed) -> bool {
+    feed.history_ready
+        && feed
+            .last_recovery
+            .is_some_and(|t| t.elapsed() < Duration::from_secs(180))
 }
 async fn health(State(app): State<App>) -> (StatusCode, Json<Value>) {
     let db_ok = matches!(
@@ -44,7 +61,7 @@ async fn health(State(app): State<App>) -> (StatusCode, Json<Value>) {
         Ok(Ok(_))
     );
     let feed = app.feed.read().await;
-    let ready = db_ok && fresh(&feed);
+    let ready = db_ok && fresh(&feed) && history_ready(&feed);
     (
         if ready {
             StatusCode::OK
@@ -52,7 +69,7 @@ async fn health(State(app): State<App>) -> (StatusCode, Json<Value>) {
             StatusCode::SERVICE_UNAVAILABLE
         },
         Json(
-            json!({"status":if ready {"ready"} else {"degraded"},"mode":"PAPER","execution_enabled":false,"database":db_ok,"market_data_fresh":fresh(&feed)}),
+            json!({"status":if ready {"ready"} else {"degraded"},"mode":"PAPER","execution_enabled":false,"database":db_ok,"market_data_fresh":fresh(&feed),"history_ready":history_ready(&feed)}),
         ),
     )
 }
@@ -71,10 +88,20 @@ fn router(app: App) -> Router {
         .route("/livez", get(|| async { Json(json!({"alive":true})) }))
         .route("/markets", get(markets))
         .route("/prices", get(prices))
+        .route("/candles", get(api::candles))
+        .route("/trades", get(api::trades))
+        .route("/book", get(api::book))
+        .route("/data-status", get(api::status))
         .with_state(app)
 }
 async fn session(app: &App) -> Result<()> {
-    let markets = trading_market_data::metadata().await?;
+    {
+        let mut feed = app.feed.write().await;
+        feed.history_ready = false;
+        feed.books.clear();
+    }
+    trading_storage::record(&app.pool, "capture_session", json!({"trade_history_complete":false,"book_history_complete":false,"reason":"startup_or_reconnect"})).await?;
+    let markets = app.client.metadata().await?;
     let metadata = serde_json::to_value(markets)?;
     trading_storage::record(&app.pool, "metadata", metadata.clone()).await?;
     app.feed.write().await.markets = metadata;
@@ -82,17 +109,39 @@ async fn session(app: &App) -> Result<()> {
         event = "metadata_validated",
         "four perpetual markets available"
     );
-    let (tx, mut rx) = mpsc::channel(32);
+    let (tx, mut rx) = mpsc::channel(256);
     let stream = trading_market_data::stream(tx);
     tokio::pin!(stream);
     let stale = tokio::time::sleep(Duration::from_secs(15));
     tokio::pin!(stale);
+    let recovery_loop = recovery::run(app);
+    tokio::pin!(recovery_loop);
     loop {
         tokio::select! {
+            result = &mut recovery_loop => return result,
             result = &mut stream => return result,
             _ = &mut stale => anyhow::bail!("market data stale"),
             value = rx.recv() => {
                 let Some(value) = value else { anyhow::bail!("feed ended") };
+                use trading_domain::data::{MarketEvent, parse_event};
+                if let Some(event) = parse_event(&value)? {
+                    match event {
+                        MarketEvent::Candle(candle) => {
+                            anyhow::ensure!(candle.t <= trading_domain::data::now_ms() + 5_000, "future candle");
+                            tokio::time::timeout(Duration::from_secs(5), trading_storage::market::candles(&app.pool, &[candle], false)).await??;
+                        }
+                        MarketEvent::Trades(trades) => {
+                            tokio::time::timeout(Duration::from_secs(5), trading_storage::market::trades(&app.pool, &trades)).await??;
+                        }
+                        MarketEvent::Book(book) => {
+                            anyhow::ensure!(book.time <= trading_domain::data::now_ms() + 5_000, "future book");
+                            tokio::time::timeout(Duration::from_secs(5), trading_storage::market::book(&app.pool, &book)).await??;
+                            let mut feed = app.feed.write().await;
+                            let latest = feed.books.entry(book.coin).or_default();
+                            *latest = (*latest).max(book.time);
+                        }
+                    }
+                }
                 if let Some(mids) = trading_domain::parse_mids(&value)? {
                     let prices = serde_json::to_value(mids)?;
                     tokio::time::timeout(Duration::from_secs(5), trading_storage::record(&app.pool, "mids", prices.clone())).await??;
@@ -115,7 +164,11 @@ async fn supervise(app: App) {
             // Do not log arbitrary remote payloads or connection strings.
             tracing::warn!(event="feed_disconnected", reason=%error, retry_seconds=delay);
         }
-        app.feed.write().await.connected = false;
+        {
+            let mut feed = app.feed.write().await;
+            feed.connected = false;
+            feed.history_ready = false;
+        }
         if started.elapsed() > Duration::from_secs(60) {
             delay = 1;
         }
@@ -143,6 +196,7 @@ async fn main() -> Result<()> {
     let app = App {
         pool,
         feed: Arc::new(RwLock::new(Feed::default())),
+        client: Arc::new(trading_market_data::history::PublicClient::new()?),
     };
     let listener = tokio::net::TcpListener::bind(
         std::env::var("BIND_ADDR").unwrap_or_else(|_| "127.0.0.1:3000".into()),
@@ -185,6 +239,11 @@ mod tests {
         assert!(!fresh(&feed));
         feed.connected = true;
         feed.last_update = Some(Instant::now());
+        assert!(!fresh(&feed));
+        for symbol in trading_domain::SYMBOLS {
+            feed.books
+                .insert(symbol.into(), trading_domain::data::now_ms());
+        }
         assert!(fresh(&feed));
         feed.last_update = Some(Instant::now() - Duration::from_secs(16));
         assert!(!fresh(&feed));
@@ -199,6 +258,7 @@ mod tests {
                 .connect_lazy("postgres://localhost/unused")
                 .unwrap(),
             feed: Arc::new(RwLock::new(Feed::default())),
+            client: Arc::new(trading_market_data::history::PublicClient::new().unwrap()),
         };
         let response = router(app)
             .oneshot(

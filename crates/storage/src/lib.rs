@@ -6,6 +6,14 @@ pub async fn connect(url: &str) -> Result<PgPool> {
     let pool = PgPoolOptions::new()
         .max_connections(5)
         .acquire_timeout(Duration::from_secs(5))
+        .after_connect(|connection, _| {
+            Box::pin(async move {
+                sqlx::query("SET statement_timeout = '5s'")
+                    .execute(connection)
+                    .await?;
+                Ok(())
+            })
+        })
         .connect(url)
         .await?;
     sqlx::migrate!("../../migrations").run(&pool).await?;
@@ -47,3 +55,5 @@ mod tests {
         assert_eq!(payload["price"], "0.123456789");
     }
 }
+
+pub mod market;
