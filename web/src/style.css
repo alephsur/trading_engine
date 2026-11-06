@@ -796,3 +796,24 @@ footer {
     min-height: 124px;
   }
 }
+/* Keep navigation and charts inside the viewport with different system fonts. */
+.chart {
+  overflow: hidden;
+}
+@media (max-width: 520px) {
+  .sidebar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .sidebar nav {
+    flex: 1 1 100%;
+    justify-content: space-between;
+  }
+  .sidebar nav button {
+    flex: 1;
+    text-align: center;
+  }
+  .kpi strong {
+    font-size: clamp(15px, 4vw, 19px);
+  }
+}
