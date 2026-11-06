@@ -38,7 +38,24 @@ Los estados reconocidos se interpretan mediante el enum del SDK fijado. Se exclu
 también `.env.*` del contexto Docker. Formato, Clippy y las ocho pruebas del adaptador
 (dos con PostgreSQL) aprobados localmente. Su
 [CI 42221045513](https://github.com/alephsur/trading_engine/actions/runs/42221045513)
-sigue en curso al registrar este informe.
+falló al consultar `/health` inmediatamente después de arrancar Docker:
+`ConnectionResetError` escapaba de la espera de disponibilidad. Las pruebas Rust,
+PostgreSQL, backtesting, lectura testnet, dashboard y construcción Docker habían
+pasado; no llegaron a ejecutarse la recuperación ni el dashboard contra el servicio.
+
+Corrección `4a90839`: la espera de arranque reintenta conexiones interrumpidas,
+timeouts y respuestas HTTP 5xx dentro del presupuesto existente de 180 intentos.
+HTTP 4xx y respuestas malformadas fallan inmediatamente. Solo se aplica a la
+lectura de `/health`; no cambia el transporte de órdenes. Cuatro pruebas de
+regresión Python aprobadas e incorporadas a CI cubren recuperación, agotamiento
+del presupuesto, estado degradado persistente y respuestas inválidas.
+
+[CI 42229938591](https://github.com/alephsur/trading_engine/actions/runs/42229938591)
+en curso al registrar este informe: formato, Clippy, Rust, PostgreSQL, backtesting,
+consulta pública testnet y comprobaciones de formato/build/tests del dashboard
+aprobados. La instalación de Chromium sigue en curso; despliegue y recuperación
+pendientes de esta ejecución. La aceptación con cuenta testnet continúa pendiente:
+no existe `.env.testnet` local y no se han enviado órdenes firmadas.
 
 ---
 
