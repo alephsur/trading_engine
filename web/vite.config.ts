@@ -7,7 +7,8 @@ export default defineConfig({
     proxy: {
       "/api": {
         target: process.env.API_URL || "http://127.0.0.1:3006",
-        changeOrigin: true,
+        // Preserve the browser Host so control Origin checks also work in development.
+        changeOrigin: false,
       },
     },
   },
