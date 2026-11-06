@@ -21,6 +21,7 @@ services:
       BIND_ADDR: 0.0.0.0:3000
       TRADING_MODE: PAPER
       RUST_LOG: info
+      PAPER_CONTROL_TOKEN: ${PAPER_CONTROL_TOKEN:-}
     ports:
       - "127.0.0.1:3000:3000"
     depends_on:

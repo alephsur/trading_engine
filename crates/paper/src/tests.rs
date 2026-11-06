@@ -385,3 +385,22 @@ fn rejects_spread_depth_volatility_and_bad_metadata() {
         assert!(changes.orders.is_empty());
     }
 }
+
+#[test]
+fn operator_pause_blocks_entries_but_keeps_protective_exits() {
+    let mut f = Fixture::new();
+    let mut a = f.account();
+    a.entries_paused = true;
+    let changes = a.tick(&f.input(), &[f.signal(1, "BTC", true)]).unwrap();
+    assert!(changes.orders.is_empty());
+    assert!(a.blockers.iter().any(|b| b == "operator_paused"));
+    a.entries_paused = false;
+    a.tick(&f.input(), &[f.signal(2, "BTC", true)]).unwrap();
+    assert_eq!(a.positions.len(), 1);
+    a.entries_paused = true;
+    f.advance(f.now + 1000);
+    f.book("BTC", "97", "97.01", "1000");
+    let changes = a.tick(&f.input(), &[]).unwrap();
+    assert!(a.positions.is_empty());
+    assert!(changes.orders.iter().all(|o| o.reduce_only));
+}

@@ -61,3 +61,5 @@ pub mod market;
 pub mod signals;
 
 pub mod paper;
+
+pub mod dashboard;

@@ -17,6 +17,7 @@ pub async fn run(app: App) {
             Ok(()) => app.feed.write().await.paper_update = Some(Instant::now()),
             Err(error) => {
                 app.feed.write().await.paper_update = None;
+                crate::dashboard::failure(&app, "paper").await;
                 tracing::warn!(event="paper_tick_blocked",reason=%error);
             }
         }
@@ -26,6 +27,7 @@ pub async fn run(app: App) {
 pub async fn funding(app: App) {
     loop {
         if let Err(error) = sync_funding(&app).await {
+            crate::dashboard::failure(&app, "funding").await;
             tracing::warn!(event="funding_sync_failed",reason=%error);
         }
         tokio::time::sleep(Duration::from_secs(60)).await;

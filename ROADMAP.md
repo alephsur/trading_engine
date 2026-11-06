@@ -56,9 +56,9 @@ Aceptación: resultados reproducibles, sin leakage y con costes documentados.
 
 ## Fase 6 — dashboard y observabilidad
 
-- [ ] Vue 3, TypeScript, Vuetify y Pinia; seleccionar gráficos mantenidos.
-- [ ] Precios, velas, indicadores, señales, posiciones, historial y métricas.
-- [ ] Controles paper, alertas y telemetría; sin activación LIVE en frontend.
+- [x] Vue 3, TypeScript, Vuetify y Pinia; seleccionar gráficos mantenidos.
+- [x] Precios, velas, indicadores, señales, posiciones, historial y métricas.
+- [x] Controles paper, alertas y telemetría; sin activación LIVE en frontend.
 
 Aceptación: UI refleja estado persistido y degradación; tests de controles y E2E.
 

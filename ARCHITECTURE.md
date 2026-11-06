@@ -126,3 +126,22 @@ ni al exchange. Ver [BACKTEST.md](BACKTEST.md) para límites y convenciones.
 - [Límites de uso](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/rate-limits-and-user-limits)
 - [Heartbeats](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/websocket/timeouts-and-heartbeats)
 - [SDK oficial: recentTrades](https://github.com/hyperliquid-dex/hyperliquid-rust-sdk/blob/master/src/info/info_client.rs)
+
+## Fase 6 — observación y control PAPER
+
+Axum sirve el dashboard Vue compilado desde el mismo origen y conserva las rutas
+de fases anteriores. Pinia mantiene datos y credencial efímera; el navegador no
+calcula riesgo ni confirma acciones de forma optimista. ECharts representa velas
+y curvas con valores desconocidos explícitos. Dependencias fijadas en lockfile.
+
+Los comandos se serializan con el worker mediante el bloqueo de cuenta existente,
+con deduplicación y auditoría transaccionales. Pausar bloquea solo entradas;
+detener marca salidas y mantiene el proceso activo para ejecutarlas cuando sea
+posible. No existe un cliente de órdenes reales.
+
+El monitor y la curva se persisten en cada transacción del worker; drawdown usa
+cada tick y Sharpe solo ventanas completas. Los informes reutilizan las métricas
+de backtesting sin cambiar la contabilidad decimal. Instantáneas PostgreSQL con
+repeatable-read, respuestas acotadas y límites de escalado documentados en
+[DASHBOARD.md](DASHBOARD.md). Prometheus y contadores locales complementan los
+logs estructurados y la auditoría persistente de errores.

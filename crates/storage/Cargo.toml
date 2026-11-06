@@ -13,3 +13,5 @@ trading-quant = { path = "../quant" }
 
 trading-paper = { path = "../paper" }
 rust_decimal.workspace = true
+serde.workspace = true
+trading-backtest = { path = "../backtest" }

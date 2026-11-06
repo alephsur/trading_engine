@@ -160,6 +160,8 @@ pub struct Decision {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Account {
     pub config: Config,
+    #[serde(default)]
+    pub entries_paused: bool,
     pub activated_at: i64,
     pub last_tick: i64,
     pub cash: D,
@@ -222,6 +224,7 @@ impl Account {
     pub fn new(config: Config, now: i64) -> Result<Self> {
         config.validate()?;
         Ok(Self {
+            entries_paused: false,
             cash: config.capital,
             equity: config.capital,
             day_start_equity: config.capital,
@@ -418,6 +421,9 @@ impl Account {
                     }
                 }
             }
+        }
+        if self.entries_paused {
+            self.blockers.push("operator_paused".into());
         }
         if !input.ready {
             self.blockers
@@ -626,3 +632,5 @@ impl Account {
 
 #[cfg(test)]
 mod tests;
+
+pub mod monitor;

@@ -1,3 +1,35 @@
+# Verificación — fase 6
+
+## Resultado local
+
+- 52 pruebas Rust aprobadas: 46 sin servicios externos y 6 con PostgreSQL.
+- Pausa sin desactivar stops; controles persistentes, deduplicados y serializados
+  con la ejecución; conflicto por reutilización de identificador y rechazo de
+  acciones/campos no admitidos. Clave obligatoria y mismo origen en navegador.
+- Reinicio mantiene la pausa; cierre sin libro queda pendiente; al volver un
+  libro reciente se ejecuta una única salida. Snapshot, operaciones, costes y
+  métricas insuficientes contrastados contra el ledger.
+- Monitor persistente: drawdown intraminuto, huecos permanentes, exclusión del
+  primer día parcial y rechazo de fronteras diarias ausentes.
+- 4 pruebas Vitest: caducidad, valores desconocidos, carrera entre selecciones de
+  mercado, reintento con el mismo identificador y huecos en gráficos.
+- TypeScript y build de producción aprobados. Recursos de gráficos se cargan
+  separadamente; Vite advierte del tamaño del módulo ECharts (559 kB sin comprimir,
+  188 kB gzip), sin impedir la compilación.
+- 2 escenarios Playwright aprobados: fixtures con confirmación de pausa, fallo de
+  red y pantalla móvil de 390 px; recursos compilados servidos por Axum con datos
+  reales de Hyperliquid, navegación Sistema, Prometheus y control no autorizado.
+- Revisión visual de capturas de escritorio y móvil; sin desbordamiento horizontal.
+- El servicio local alcanzó `/health` ready con los cuatro mercados y observaciones
+  persistidas en PostgreSQL. No se habilitó ejecución real.
+- Rustfmt, Clippy, formato frontend, smoke offline de backtesting y validación
+  de Compose aprobados. Docker local no accesible: build/arranque en CI pendiente.
+
+La validación remota de esta fase se registrará tras terminar GitHub Actions.
+Detalles de uso y límites en [DASHBOARD.md](DASHBOARD.md).
+
+---
+
 # Verificación — fase 5
 
 ## Resultado local

@@ -26,11 +26,28 @@ jobs:
       - run: cargo test --workspace --locked
       - run: cargo test --workspace --locked -- --ignored
       - run: python3 scripts/backtest_smoke.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+        working-directory: web
+      - run: npm run format:check && npm run build && npm test
+        working-directory: web
+      - run: npx playwright install --with-deps chromium
+        working-directory: web
+      - run: npm run e2e
+        working-directory: web
       - run: docker compose config --quiet
       - run: docker compose build
       - run: docker compose up -d
       - run: python3 scripts/smoke.py
       - run: python3 scripts/recovery_smoke.py
+      - run: npm run e2e -- --grep "real service"
+        working-directory: web
+        env:
+          DASHBOARD_URL: http://127.0.0.1:3000/dashboard/
       - if: always()
         run: docker compose logs --no-color
       - if: always()

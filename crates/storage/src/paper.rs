@@ -37,7 +37,7 @@ pub async fn read(pool: &PgPool) -> Result<Account> {
     )?)
 }
 /// Independently reconstruct quantity and cash from immutable fills and funding.
-async fn reconcile(connection: &mut sqlx::PgConnection, state: &Account) -> Result<()> {
+pub(crate) async fn reconcile(connection: &mut sqlx::PgConnection, state: &Account) -> Result<()> {
     let orders: Vec<Value> = sqlx::query_scalar(
         "SELECT payload FROM paper_orders WHERE account_id=$1 ORDER BY order_id",
     )
@@ -245,6 +245,7 @@ pub async fn tick(
     .bind(serde_json::to_value(&state)?)
     .execute(&mut *tx)
     .await?;
+    crate::dashboard::observe(&mut tx, &state).await?;
     tx.commit().await?;
     Ok(())
 }

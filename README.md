@@ -124,3 +124,10 @@ elimina una vela de la base desechable de Compose para comprobar su recuperació
 Consulta [arquitectura](ARCHITECTURE.md), [roadmap](ROADMAP.md) y
 [verificación de esta entrega](VALIDATION.md). Las siguientes fases añaden
 dashboard, observabilidad e integración testnet; no están implementados en esta entrega.
+
+## Dashboard PAPER
+
+La fase 6 añade la interfaz en <http://localhost:3000/dashboard/> al arrancar
+Compose. Incluye mercados, velas, cuenta, posiciones, actividad y estado del motor.
+Los controles están deshabilitados por defecto; ver [DASHBOARD.md](DASHBOARD.md)
+para configurar la clave local, conocer las métricas y ejecutar las pruebas.

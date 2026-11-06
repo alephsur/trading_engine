@@ -1,4 +1,5 @@
 mod api;
+mod dashboard;
 mod paper;
 mod recovery;
 use anyhow::{Result, ensure};
@@ -30,6 +31,8 @@ struct App {
     feed: Arc<RwLock<Feed>>,
     client: Arc<trading_market_data::history::PublicClient>,
     engine: Arc<trading_quant::Engine>,
+    control_token: Arc<Option<String>>,
+    telemetry: Arc<dashboard::Telemetry>,
 }
 
 fn validate_mode(mode: &str) -> Result<()> {
@@ -90,7 +93,10 @@ async fn prices(State(app): State<App>) -> Json<Value> {
     )
 }
 fn router(app: App) -> Router {
-    Router::new()
+    let api = Router::new()
+        .route("/observability", get(dashboard::snapshot))
+        .route("/metrics", get(dashboard::metrics))
+        .route("/paper/control", axum::routing::post(dashboard::control))
         .route("/health", get(health))
         .route("/livez", get(|| async { Json(json!({"alive":true})) }))
         .route("/markets", get(markets))
@@ -104,7 +110,20 @@ fn router(app: App) -> Router {
         .route("/signals", get(api::signals))
         .route("/paper/account", get(api::paper_account))
         .route("/paper/positions", get(api::paper_positions))
-        .route("/paper/{kind}", get(api::paper_ledger))
+        .route("/paper/{kind}", get(api::paper_ledger));
+    Router::new()
+        .merge(api.clone())
+        .nest("/api", api)
+        .route(
+            "/",
+            get(|| async { axum::response::Redirect::temporary("/dashboard/") }),
+        )
+        .nest_service(
+            "/dashboard",
+            tower_http::services::ServeDir::new(
+                std::env::var("DASHBOARD_DIR").unwrap_or_else(|_| "web/dist".into()),
+            ),
+        )
         .with_state(app)
 }
 async fn session(app: &App) -> Result<()> {
@@ -187,6 +206,7 @@ async fn supervise(app: App) {
             feed.history_ready = false;
             feed.analysis_ready = false;
         }
+        dashboard::failure(&app, "feed").await;
         if started.elapsed() > Duration::from_secs(60) {
             delay = 1;
         }
@@ -225,6 +245,8 @@ async fn main() -> Result<()> {
     };
     trading_storage::paper::initialize(&pool, paper_config).await?;
     let app = App {
+        control_token: Arc::new(dashboard::token(std::env::var("PAPER_CONTROL_TOKEN").ok())?),
+        telemetry: Arc::new(dashboard::Telemetry::default()),
         engine,
         pool,
         feed: Arc::new(RwLock::new(Feed::default())),
@@ -292,6 +314,8 @@ mod tests {
     #[tokio::test]
     async fn liveness_does_not_require_database() {
         let app = App {
+            control_token: Arc::new(None),
+            telemetry: Arc::new(dashboard::Telemetry::default()),
             pool: sqlx::postgres::PgPoolOptions::new()
                 .connect_lazy("postgres://localhost/unused")
                 .unwrap(),
