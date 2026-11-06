@@ -16,7 +16,12 @@
 
 Docker sigue sin permiso local de acceso al socket. El workflow ejecuta integración
 PostgreSQL 17, build/arranque Compose, smoke real y una prueba de reinicio que elimina
-y recupera una vela en la DB desechable de CI. Resultado remoto pendiente del push.
+y recupera una vela en la DB desechable de CI.
+
+[GitHub Actions: fase 2](https://github.com/alephsur/trading_engine/actions/runs/42201266494)
+terminó con **success** sobre `5a11d1a`: todos los checks, arranque, datos reales y
+recuperación tras reinicio aprobados. Este resultado se registra en un commit
+posterior que solo modifica documentación.
 
 ## Límites explícitos
 
