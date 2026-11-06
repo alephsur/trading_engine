@@ -1,8 +1,9 @@
 # AI Trading Engine
 
-Fase 2 funcional en Rust: PostgreSQL, perpetuos BTC/ETH/SOL/HYPE, precios, libros,
+Fase 3 funcional en Rust: PostgreSQL, perpetuos BTC/ETH/SOL/HYPE, precios, libros,
 operaciones y velas 1m/5m/15m/1h de Hyperliquid. Incluye recuperación histórica
-y API de salud. No ejecuta ni simula
+y API de salud. Añade indicadores y cuatro estrategias sobre cierres confirmados.
+No ejecuta ni simula
 órdenes todavía. No necesita cuenta, wallet ni credenciales de Hyperliquid.
 
 ## Arranque con Docker
@@ -44,6 +45,7 @@ El binario lee variables de entorno; no carga `.env` automáticamente.
 | `DATABASE_URL` | Obligatoria | Conexión PostgreSQL; nunca se registra explícitamente |
 | `BIND_ADDR` | `127.0.0.1:3000` | Dirección de la API |
 | `TRADING_MODE` | `PAPER` | Único valor admitido en esta fase |
+| `STRATEGY_CONFIG_PATH` | Defaults integrados | Archivo JSON de parámetros, validado al arrancar |
 | `RUST_LOG` | `info` | Nivel de logs JSON; `debug` muestra snapshots persistidos |
 
 Los endpoints públicos de Hyperliquid están fijados en el adaptador; no se envían
@@ -52,7 +54,7 @@ peticiones autenticadas. Los índices de activos se descubren al conectar.
 ## API
 
 - `GET /livez`: proceso vivo, independiente del estado de la DB/feed.
-- `GET /health`: 200 listo o 503 degradado; incluye DB, frescura, recuperación histórica y ejecución desactivada.
+- `GET /health`: 200 listo o 503 degradado; incluye DB, frescura, recuperación histórica, análisis y ejecución desactivada.
 - `GET /markets`: los cuatro mercados, precisión, leverage máximo e índice descubierto.
 - `GET /prices`: precios como strings decimales, frescura y edad desde recepción local.
 
@@ -61,6 +63,16 @@ peticiones autenticadas. Los índices de activos se descubren al conectar.
 - `GET /trades?symbol=BTC&limit=100`: operaciones deduplicadas, con hora del exchange.
 - `GET /book?symbol=BTC`: último snapshot (hasta 20 niveles/lado) y frescura.
 - `GET /data-status`: cobertura de las 16 series y límites de completitud.
+- `GET /strategies`: manifiesto de las cuatro estrategias, identidad de configuración y cursores.
+- `GET /evaluations?symbol=BTC&interval=1m&limit=10`: indicadores, decisiones y motivos.
+- `GET /signals?symbol=BTC&interval=1m&limit=100`: propuestas long/short, con `analysis_only:true`.
+
+EMA, RSI, ATR, MACD y volumen se calculan con Decimal. Los parámetros de las
+estrategias están en [config/strategies.example.json](config/strategies.example.json).
+Para usar un archivo aprobado localmente, exporta `STRATEGY_CONFIG_PATH` con su ruta
+antes de arrancar. En Docker debes montar el archivo y pasar esa variable al servicio.
+No se cambian parámetros desde la API. Ver [reglas y convenciones](STRATEGIES.md).
+La ausencia de señales es un resultado válido; ninguna estrategia promete rentabilidad.
 
 Símbolos permitidos: BTC, ETH, SOL, HYPE. Intervalos: 1m, 5m, 15m, 1h. Límites: 1–500.
 La recuperación conserva el ancla histórica tras reinicios y repara huecos internos.
@@ -91,10 +103,10 @@ La prueba de integración requiere una base de pruebas: aplica migraciones y esc
 un evento. Está ignorada en la suite sin DB y se ejecuta explícitamente en CI.
 El smoke E2E usa el servidor arrancado y datos reales; requiere Internet.
 CI valida formato, lint, tests, integración PostgreSQL, construcción y arranque Docker,
-las 16 series con datos reales y recuperación tras reiniciar. `scripts/recovery_smoke.py`
+las 16 series con datos reales, evaluaciones y recuperación tras reiniciar. `scripts/recovery_smoke.py`
 elimina una vela de la base desechable de Compose para comprobar su recuperación;
 **no lo ejecutes contra una base que quieras conservar intacta**.
 
 Consulta [arquitectura](ARCHITECTURE.md), [roadmap](ROADMAP.md) y
 [verificación de esta entrega](VALIDATION.md). Las siguientes fases añaden
-estrategias, riesgo, simulación y dashboard; no están implementadas en esta entrega.
+riesgo, simulación y dashboard; no están implementadas en esta entrega.

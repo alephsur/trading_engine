@@ -1,13 +1,14 @@
-# Arquitectura — fase 2
+# Arquitectura — fase 3
 
 ## Componentes ejecutables
 
-Workspace Rust con cuatro crates:
+Workspace Rust con cinco crates:
 
 - `trading-domain`: universo permitido y validación de metadatos, mids, OHLCV,
   operaciones y snapshots de libro. Precios/cantidades `rust_decimal`, strings JSON.
 - `trading-market-data`: cliente HTTP público, pacing/reintentos y WebSocket con
   25 suscripciones: mids + cuatro libros + cuatro streams de operaciones + 16 velas.
+- `trading-quant`: indicadores decimales, estrategias puras y replay determinista.
 - `trading-storage`: PostgreSQL, migraciones embebidas, escrituras idempotentes y consultas.
 - `trading-server`: Axum, supervisor, recuperación histórica concurrente y frescura.
 
@@ -45,7 +46,10 @@ por el mero paso del reloj sobre un último snapshot WS potencialmente incomplet
 
 ## Recuperación
 
-En el primer arranque se solicitan 100 velas cerradas por activo/intervalo. En
+En el primer arranque se solicitan al menos 100 velas cerradas por activo/intervalo
+o el tamaño de ventana de análisis configurado si es mayor. La ventana admite
+60–500; ampliar la configuración puede extender el ancla hacia atrás, nunca
+recortarla para ocultar huecos. En
 reconexiones y cada 60 segundos se buscan TODOS los huecos desde el ancla, no
 solo desde la vela más reciente. Las peticiones abarcan como máximo 500 velas.
 Se respeta la ventana del exchange de 5.000 velas, con margen de dos; los huecos
@@ -74,6 +78,18 @@ un reloj del sistema sincronizado. En startup/reconexión se invalida el estado
 histórico hasta completar la recuperación. Mids no incluye timestamp del exchange:
 su frescura solo mide recepción local.
 
+La fase 3 añade `signal_configs`, `signal_cursors`, `evaluations` y `signals`.
+Las estrategias se ejecutan sobre cierres confirmados después de la recuperación.
+Un lote de hasta 500 cierres por serie se guarda con su cursor en una sola
+transacción; los bloqueos de cursor y claves únicas impiden duplicados. La tabla
+`signals` sirve como flujo interno persistente con identificador secuencial.
+Se guardan también las evaluaciones sin señal y sus motivos. Todas las propuestas
+son de análisis, sin elegibilidad de ejecución. Ver [STRATEGIES.md](STRATEGIES.md).
+
+`/health` exige además que las evaluaciones alcancen la cobertura actual.
+`/strategies` expone parámetros/versiones; `/evaluations` incluye indicadores y
+razones; `/signals` muestra propuestas direccionales de la configuración activa.
+
 `/candles` devuelve únicamente velas finalizadas por defecto; `closed_only=false`
 permite inspeccionar las provisionales. `/trades`, `/book` y `/data-status` exponen
 los datos persistidos y sus límites. Límites de consulta: 1–500 filas, orden más
@@ -86,7 +102,7 @@ Se mantiene el adaptador público pequeño. El SDK oficial revisado en fase 1 fu
 `hyperliquid_rust_sdk` 0.6.0, con firma Alloy y WebSocket 0.20. Se reevaluará antes
 de integrar órdenes testnet en fase 7; no se afirma compatibilidad de ejecución.
 
-La fase 3 añadirá indicadores, Strategy y señales sobre cierres confirmados. Riesgo,
+La fase 3 incorpora indicadores, Strategy y señales sobre cierres confirmados. Riesgo,
 sizing, PaperExecutor y posiciones llegarán en fase 4, independientes de estrategias
 u opiniones de IA. Sus máquinas de estados necesitarán idempotencia transaccional
 y recuperación de órdenes: las tablas actuales no son ese motor de ejecución.

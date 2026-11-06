@@ -27,6 +27,11 @@ else:
     raise SystemExit("Engine did not become ready within 180 attempts")
 
 assert health["mode"] == "PAPER" and health["execution_enabled"] is False
+assert health["analysis_ready"]
+strategies = get("/strategies")
+assert len(strategies["manifest"]["strategies"]) == 4
+assert len(strategies["cursors"]) == 16
+assert strategies["analysis_only"]
 assert get("/livez")["alive"] is True
 markets = get("/markets")
 assert {m["metadata"]["name"] for m in markets} == {"BTC", "ETH", "SOL", "HYPE"}
@@ -47,6 +52,13 @@ for symbol in ("BTC", "ETH", "SOL", "HYPE"):
         assert all(c["closed"] and c["candle"]["s"] == symbol for c in candles)
         times = [c["candle"]["t"] for c in candles]
         assert times == sorted(set(times), reverse=True)
+        evaluation = get(f"/evaluations?symbol={symbol}&interval={interval}&limit=1")["evaluations"][0]
+        assert evaluation["analysis_only"] and evaluation["config_id"] == strategies["config_id"]
+        assert len(evaluation["decisions"]) == 4 and evaluation["indicators"] is not None
+        assert evaluation["close_time"] < int(time.time() * 1000)
+        signals = get(f"/signals?symbol={symbol}&interval={interval}")["signals"]
+        assert all(s["analysis_only"] and s["direction"] in ("long", "short") for s in signals)
+        assert len({s["event_id"] for s in signals}) == len(signals)
 status = get("/data-status")
 assert status["history_ready"]
 assert len(status["candle_coverage"]) == 16
@@ -57,4 +69,4 @@ for query in ("symbol=DOGE", "symbol=BTC&interval=2m", "symbol=BTC&limit=0"):
         raise AssertionError("invalid query accepted")
     except urllib.error.HTTPError as error:
         assert error.code == 400
-print("PASS: real prices, books, trades, 16 closed candle series, coverage and API validation")
+print("PASS: real prices, books, trades, 16 closed candle series, indicators, strategy evaluations and analysis-only signals")

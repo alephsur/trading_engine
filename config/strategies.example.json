@@ -1,0 +1,15 @@
+{
+  "version": "initial-v1",
+  "history_window": 100,
+  "ema": { "fast": 20, "slow": 50 },
+  "momentum": {
+    "lookback": 5, "rsi_period": 14,
+    "long_min": "55", "long_max": "70",
+    "short_min": "30", "short_max": "45", "min_change_bps": "10"
+  },
+  "breakout": { "lookback": 20, "volume_period": 20, "min_volume_multiple": "1.5" },
+  "mean_reversion": {
+    "ema_period": 20, "atr_period": 14, "rsi_period": 14,
+    "atr_multiple": "2", "oversold": "30", "overbought": "70"
+  }
+}

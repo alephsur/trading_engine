@@ -45,7 +45,7 @@ pub async fn book(pool: &PgPool, book: &Book) -> Result<()> {
     Ok(())
 }
 pub async fn anchor(pool: &PgPool, symbol: &str, interval: &str, initial: i64) -> Result<i64> {
-    sqlx::query("INSERT INTO candle_coverage (symbol,interval,start_time,checked_through) VALUES ($1,$2,$3,$3-1) ON CONFLICT DO NOTHING")
+    sqlx::query("INSERT INTO candle_coverage (symbol,interval,start_time,checked_through) VALUES ($1,$2,$3,$3-1) ON CONFLICT (symbol,interval) DO UPDATE SET start_time=LEAST(candle_coverage.start_time,EXCLUDED.start_time)")
         .bind(symbol).bind(interval).bind(initial).execute(pool).await?;
     Ok(
         sqlx::query_scalar(

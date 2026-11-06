@@ -30,9 +30,9 @@ libros conservan límites explícitos de cobertura; no se fabrican históricos p
 
 ## Fase 3 — indicadores y señales
 
-- [ ] EMA, RSI, ATR, MACD y volumen con fixtures calculados independientemente.
-- [ ] Interfaz Strategy y EMA trend, momentum/RSI, breakout y mean reversion.
-- [ ] Parámetros versionados, eventos de señales y replay determinista.
+- [x] EMA, RSI, ATR, MACD y volumen con fixtures calculados independientemente.
+- [x] Interfaz Strategy y EMA trend, momentum/RSI, breakout y mean reversion.
+- [x] Parámetros versionados, eventos de señales y replay determinista.
 
 Aceptación: señales usan solo datos disponibles al cierre; pruebas sin look-ahead.
 

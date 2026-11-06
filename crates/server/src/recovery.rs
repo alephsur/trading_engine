@@ -13,25 +13,46 @@ pub async fn run(app: &crate::App) -> Result<()> {
         market::trades(&app.pool, &trades).await?;
     }
     loop {
-        let ready = recover(&app.pool, &app.client).await?;
+        let ready = recover(&app.pool, &app.client, app.engine.window().max(100)).await?;
+        let mut analysed = ready;
+        if ready {
+            for symbol in SYMBOLS {
+                for interval in INTERVALS {
+                    analysed &= trading_storage::signals::process_series(
+                        &app.pool,
+                        &app.engine,
+                        symbol,
+                        interval,
+                    )
+                    .await?;
+                }
+            }
+        }
         {
             let mut feed = app.feed.write().await;
             feed.history_ready = ready;
+            feed.analysis_ready = analysed;
             feed.last_recovery = Some(std::time::Instant::now());
         }
         tracing::info!(event = "history_checked", complete = ready);
-        tokio::time::sleep(std::time::Duration::from_secs(60)).await;
+        tokio::time::sleep(std::time::Duration::from_secs(if ready && !analysed {
+            1
+        } else {
+            60
+        }))
+        .await;
     }
 }
 
 /// Runs beside the WebSocket; one bounded, paced pass at a time.
-pub async fn recover(pool: &PgPool, client: &PublicClient) -> Result<bool> {
+pub async fn recover(pool: &PgPool, client: &PublicClient, initial: usize) -> Result<bool> {
     let mut complete = true;
     for symbol in SYMBOLS {
         for interval in INTERVALS {
             let step = interval_ms(interval)?;
             let end = last_closed_open(now_ms(), step);
-            let start = market::anchor(pool, symbol, interval, end - 99 * step).await?;
+            let start =
+                market::anchor(pool, symbol, interval, end - (initial as i64 - 1) * step).await?;
             let missing = market::missing(pool, symbol, interval, start, end, step).await?;
             for (first, window_end) in windows(&missing, end, step) {
                 let candles = client.candles(symbol, interval, first, window_end).await?;

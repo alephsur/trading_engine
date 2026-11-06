@@ -1,4 +1,35 @@
-# Verificación — fase 2
+# Verificación — fase 3
+
+## Resultado local
+
+- 22 tests aprobados: 19 sin servicios externos y 3 con PostgreSQL.
+- Fixtures de EMA, RSI, ATR, MACD y volumen calculados mediante fracciones exactas
+  y sumas ponderadas independientes; coincidencia dentro de 10^-20.
+- Las cuatro estrategias cubren candidatos long/short y filtros; warmup y serie
+  plana no generan señales; configuración inválida se rechaza.
+- Pruebas de causalidad por prefijos, rechazo de velas futuras/no confirmadas,
+  huecos, orden incorrecto, activos mezclados y replay determinista.
+- Integración PostgreSQL: fallo inyectado tras escribir una primera señal revierte
+  evaluaciones, eventos y cursor; dos consumidores concurrentes no duplican filas;
+  un reinicio conserva resultados; distintas versiones mantienen históricos separados.
+- Catch-up de más de 500 cierres usa lotes acotados y reproduce la misma evaluación.
+- Smoke real de las 16 series: indicadores, cuatro decisiones por cierre,
+  endpoints de señales/configuración y ejecución desactivada.
+- Formato y Clippy sin advertencias. Migración aplicada sobre la DB de fases anteriores.
+
+CI comprobará también PostgreSQL 17, contenedores y recuperación de mercado con
+conservación de evaluaciones y ausencia de señales duplicadas. Pendiente del push.
+
+## Alcance
+
+Es replay de decisiones, no backtesting de rentabilidad. Ninguna prueba establece
+rentabilidad de una estrategia. No hay órdenes ni posiciones. Los límites de
+histórico de mercado documentados en fase 2 siguen aplicándose. Las convenciones
+de semilla, ventana y configuración están en [STRATEGIES.md](STRATEGIES.md).
+
+---
+
+## Historial de verificación — fase 2
 
 ## Resultado local
 

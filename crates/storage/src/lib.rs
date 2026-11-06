@@ -57,3 +57,5 @@ mod tests {
 }
 
 pub mod market;
+
+pub mod signals;

@@ -19,6 +19,7 @@ struct Feed {
     connected: bool,
     books: BTreeMap<String, i64>,
     history_ready: bool,
+    analysis_ready: bool,
     last_recovery: Option<Instant>,
 }
 #[derive(Clone)]
@@ -26,6 +27,7 @@ struct App {
     pool: PgPool,
     feed: Arc<RwLock<Feed>>,
     client: Arc<trading_market_data::history::PublicClient>,
+    engine: Arc<trading_quant::Engine>,
 }
 
 fn validate_mode(mode: &str) -> Result<()> {
@@ -61,7 +63,7 @@ async fn health(State(app): State<App>) -> (StatusCode, Json<Value>) {
         Ok(Ok(_))
     );
     let feed = app.feed.read().await;
-    let ready = db_ok && fresh(&feed) && history_ready(&feed);
+    let ready = db_ok && fresh(&feed) && history_ready(&feed) && feed.analysis_ready;
     (
         if ready {
             StatusCode::OK
@@ -69,7 +71,7 @@ async fn health(State(app): State<App>) -> (StatusCode, Json<Value>) {
             StatusCode::SERVICE_UNAVAILABLE
         },
         Json(
-            json!({"status":if ready {"ready"} else {"degraded"},"mode":"PAPER","execution_enabled":false,"database":db_ok,"market_data_fresh":fresh(&feed),"history_ready":history_ready(&feed)}),
+            json!({"status":if ready {"ready"} else {"degraded"},"mode":"PAPER","execution_enabled":false,"database":db_ok,"market_data_fresh":fresh(&feed),"history_ready":history_ready(&feed),"analysis_ready":feed.analysis_ready}),
         ),
     )
 }
@@ -92,12 +94,16 @@ fn router(app: App) -> Router {
         .route("/trades", get(api::trades))
         .route("/book", get(api::book))
         .route("/data-status", get(api::status))
+        .route("/strategies", get(api::strategies))
+        .route("/evaluations", get(api::evaluations))
+        .route("/signals", get(api::signals))
         .with_state(app)
 }
 async fn session(app: &App) -> Result<()> {
     {
         let mut feed = app.feed.write().await;
         feed.history_ready = false;
+        feed.analysis_ready = false;
         feed.books.clear();
     }
     trading_storage::record(&app.pool, "capture_session", json!({"trade_history_complete":false,"book_history_complete":false,"reason":"startup_or_reconnect"})).await?;
@@ -168,6 +174,7 @@ async fn supervise(app: App) {
             let mut feed = app.feed.write().await;
             feed.connected = false;
             feed.history_ready = false;
+            feed.analysis_ready = false;
         }
         if started.elapsed() > Duration::from_secs(60) {
             delay = 1;
@@ -193,7 +200,15 @@ async fn main() -> Result<()> {
         json!({"mode":"PAPER","execution_enabled":false}),
     )
     .await?;
+    let config = match std::env::var("STRATEGY_CONFIG_PATH") {
+        Ok(path) => serde_json::from_str(&std::fs::read_to_string(path)?)?,
+        Err(std::env::VarError::NotPresent) => trading_quant::config::Config::default(),
+        Err(error) => return Err(error.into()),
+    };
+    let engine = Arc::new(trading_quant::Engine::builtin(config)?);
+    trading_storage::signals::register(&pool, &engine).await?;
     let app = App {
+        engine,
         pool,
         feed: Arc::new(RwLock::new(Feed::default())),
         client: Arc::new(trading_market_data::history::PublicClient::new()?),
@@ -259,6 +274,7 @@ mod tests {
                 .unwrap(),
             feed: Arc::new(RwLock::new(Feed::default())),
             client: Arc::new(trading_market_data::history::PublicClient::new().unwrap()),
+            engine: Arc::new(trading_quant::Engine::builtin(Default::default()).unwrap()),
         };
         let response = router(app)
             .oneshot(

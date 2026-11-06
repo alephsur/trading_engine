@@ -9,3 +9,4 @@ serde_json.workspace = true
 sqlx.workspace = true
 tokio.workspace = true
 trading-domain = { path = "../domain" }
+trading-quant = { path = "../quant" }

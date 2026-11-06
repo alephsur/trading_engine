@@ -86,3 +86,42 @@ pub async fn status(State(app): State<App>) -> Response {
         json!({"candle_coverage":coverage,"history_ready":crate::history_ready(&feed),"trade_history_complete":false,"book_history_complete":false,"connected":feed.connected}),
     ))
 }
+
+pub async fn strategies(State(app): State<App>) -> Response {
+    let cursors = trading_storage::signals::cursors(&app.pool, app.engine.id())
+        .await
+        .map_err(unavailable)?;
+    Ok(Json(
+        json!({"config_id":app.engine.id(),"manifest":app.engine.manifest(),"cursors":cursors,"analysis_only":true}),
+    ))
+}
+pub async fn evaluations(State(app): State<App>, Query(q): Query<DataQuery>) -> Response {
+    q.validate()?;
+    let rows = trading_storage::signals::evaluations(
+        &app.pool,
+        app.engine.id(),
+        &q.symbol,
+        &q.interval,
+        q.limit,
+    )
+    .await
+    .map_err(unavailable)?;
+    Ok(Json(
+        json!({"evaluations":rows,"config_id":app.engine.id(),"order":"newest_first"}),
+    ))
+}
+pub async fn signals(State(app): State<App>, Query(q): Query<DataQuery>) -> Response {
+    q.validate()?;
+    let rows = trading_storage::signals::signals(
+        &app.pool,
+        app.engine.id(),
+        &q.symbol,
+        &q.interval,
+        q.limit,
+    )
+    .await
+    .map_err(unavailable)?;
+    Ok(Json(
+        json!({"signals":rows,"config_id":app.engine.id(),"analysis_only":true,"order":"event_id_desc"}),
+    ))
+}
