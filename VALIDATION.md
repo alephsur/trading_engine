@@ -17,8 +17,11 @@
   endpoints de señales/configuración y ejecución desactivada.
 - Formato y Clippy sin advertencias. Migración aplicada sobre la DB de fases anteriores.
 
-CI comprobará también PostgreSQL 17, contenedores y recuperación de mercado con
-conservación de evaluaciones y ausencia de señales duplicadas. Pendiente del push.
+[GitHub Actions: fase 3](https://github.com/alephsur/trading_engine/actions/runs/42204097285)
+terminó con **success** sobre `be11955`: formato, Clippy, tests, PostgreSQL 17,
+build/arranque Docker, indicadores/evaluaciones reales de las 16 series y reinicio
+con conservación de evaluaciones y ausencia de señales duplicadas.
+Este resultado se registra en un commit posterior solo de documentación.
 
 ## Alcance
 
