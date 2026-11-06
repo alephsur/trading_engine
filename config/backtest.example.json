@@ -1,0 +1,58 @@
+{
+  "train_start": 1793491200000,
+  "validation_start": 1793577600000,
+  "test_start": 1793664000000,
+  "end": 1793750400000,
+  "interval": "1m",
+  "latency_ms": 1000,
+  "minimum_training_trades": 30,
+  "risk": {
+    "capital": "10000",
+    "risk_fraction": "0.0025",
+    "daily_loss_fraction": "0.01",
+    "max_positions": 2,
+    "exposure_fraction": "0.20",
+    "leverage": "1",
+    "correlated_exposure_fraction": "0.15",
+    "fee_bps": "4.5",
+    "slippage_bps": "2",
+    "participation": "0.10",
+    "max_spread_bps": "20",
+    "max_atr_fraction": "0.03",
+    "stop_atr": "2",
+    "reward_multiple": "2",
+    "max_signal_age_ms": 120000
+  },
+  "candidates": [
+    {
+      "version": "initial-v1",
+      "history_window": 100,
+      "ema": {
+        "fast": 20,
+        "slow": 50
+      },
+      "momentum": {
+        "lookback": 5,
+        "rsi_period": 14,
+        "long_min": "55",
+        "long_max": "70",
+        "short_min": "30",
+        "short_max": "45",
+        "min_change_bps": "10"
+      },
+      "breakout": {
+        "lookback": 20,
+        "volume_period": 20,
+        "min_volume_multiple": "1.5"
+      },
+      "mean_reversion": {
+        "ema_period": 20,
+        "atr_period": 14,
+        "rsi_period": 14,
+        "atr_multiple": "2",
+        "oversold": "30",
+        "overbought": "70"
+      }
+    }
+  ]
+}

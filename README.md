@@ -1,6 +1,6 @@
 # AI Trading Engine
 
-Fase 4 funcional en Rust: PostgreSQL, perpetuos BTC/ETH/SOL/HYPE, precios, libros,
+Fase 5 funcional en Rust: PostgreSQL, perpetuos BTC/ETH/SOL/HYPE, precios, libros,
 operaciones y velas 1m/5m/15m/1h de Hyperliquid. Incluye recuperación histórica
 y API de salud. Añade indicadores y cuatro estrategias sobre cierres confirmados.
 Simula órdenes y posiciones con controles de riesgo, costes y recuperación persistente.
@@ -93,13 +93,22 @@ La cuenta simulada y su auditoría están en `/paper/account`, `/paper/positions
 `/paper/orders`, `/paper/fills`, `/paper/decisions`, `/paper/funding` y `/paper/events`.
 Ver [modelo de ejecución, límites y financiación](PAPER.md).
 
+## Backtesting offline
+
+La fase 5 incorpora replay determinista, equity/drawdown, ratios con muestras mínimas
+y selección de parámetros usando solo entrenamiento. Validación y prueba quedan
+fuera de esa selección. Se exportan observaciones reales de PostgreSQL sin inventar
+libros ni financiación. Consulta [BACKTEST.md](BACKTEST.md) para ejecutar el CLI,
+configurar fechas y entender la cobertura y las métricas no disponibles.
+
 ## Verificación
 
 ```sh
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo test --workspace --locked
-TEST_DATABASE_URL="$DATABASE_URL" cargo test -p trading-storage --locked -- --ignored
+TEST_DATABASE_URL="$DATABASE_URL" cargo test --workspace --locked -- --ignored
+python3 scripts/backtest_smoke.py
 python3 scripts/smoke.py http://127.0.0.1:3000
 docker compose config --quiet
 ```
@@ -114,4 +123,4 @@ elimina una vela de la base desechable de Compose para comprobar su recuperació
 
 Consulta [arquitectura](ARCHITECTURE.md), [roadmap](ROADMAP.md) y
 [verificación de esta entrega](VALIDATION.md). Las siguientes fases añaden
-backtesting, métricas y dashboard; no están implementados en esta entrega.
+dashboard, observabilidad e integración testnet; no están implementados en esta entrega.

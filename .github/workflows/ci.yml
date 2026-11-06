@@ -24,7 +24,8 @@ jobs:
       - run: cargo fmt --all -- --check
       - run: cargo clippy --workspace --all-targets --locked -- -D warnings
       - run: cargo test --workspace --locked
-      - run: cargo test -p trading-storage --locked -- --ignored
+      - run: cargo test --workspace --locked -- --ignored
+      - run: python3 scripts/backtest_smoke.py
       - run: docker compose config --quiet
       - run: docker compose build
       - run: docker compose up -d

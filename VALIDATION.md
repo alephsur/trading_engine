@@ -1,4 +1,42 @@
-# Verificación — fase 4
+# Verificación — fase 5
+
+## Resultado local
+
+- 46 pruebas aprobadas: 41 sin servicios externos y 5 con PostgreSQL.
+- Replay determinista, latencia de señales y coincidencia de fills con Account PAPER.
+- Aislamiento temporal: modificar validación/prueba conserva resultados de entrenamiento
+  y selección. Los tramos tienen cuentas independientes y no heredan posiciones.
+- Rechazo de datos futuros, duplicados, orden incorrecto y fronteras inválidas;
+  velas recibidas con retraso no producen ejecuciones antes de su disponibilidad.
+- Métricas contrastadas con cálculos independientes: retorno, drawdown, win rate,
+  profit factor y Sharpe; umbrales mínimos, varianza cero y métricas incompletas explícitas.
+- Financiación publicada después de la frontera no se usa antes de recibirse;
+  un oracle ausente conserva obligaciones y deja la rentabilidad final desconocida.
+- PostgreSQL: exportación repetible de solo lectura, tiempos originales conservados,
+  número de filas y cuentas sin cambios. Migración 0005 aplicada a una DB anterior.
+- CLI completo con fixture sintético: dos ejecuciones producen informes idénticos;
+  candidatos elegidos solo en entrenamiento; cambios en holdout no cambian la elección;
+  un informe previo no puede sobrescribirse.
+- Captura real previa: exportados 1.969 registros y ejecutado el CLI offline.
+  La cobertura/muestra corta no cumple selección: `no_eligible_training_candidate`;
+  no se fuerza un ganador ni se declara rentabilidad a partir de esa captura.
+- Formato y Clippy sin advertencias. CI incluye el smoke offline y todas las
+  integraciones PostgreSQL, además de las pruebas anteriores de Docker y recuperación.
+
+La validación completa en GitHub Actions está pendiente del commit de esta fase.
+El socket Docker local sigue sin estar accesible; construcción/arranque se comprueban en CI.
+
+## Alcance
+
+Se entregan replay de observaciones registradas y separación temporal, no evidencia
+estadística de rentabilidad. No se simulan libros que no existen en la captura ni
+cierres gratuitos al final del periodo. Las métricas de muestra insuficiente o costes
+sin resolver son `null` con su estado. Modelos, límites de tamaño y comandos están
+en [BACKTEST.md](BACKTEST.md). LIVE y TESTNET permanecen desactivados.
+
+---
+
+## Historial de verificación — fase 4
 
 ## Resultado local
 

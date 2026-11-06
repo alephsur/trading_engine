@@ -1,8 +1,8 @@
-# Arquitectura — fase 4
+# Arquitectura — fase 5
 
 ## Componentes ejecutables
 
-Workspace Rust con seis crates:
+Workspace Rust con siete crates:
 
 - `trading-domain`: universo permitido y validación de metadatos, mids, OHLCV,
   operaciones y snapshots de libro. Precios/cantidades `rust_decimal`, strings JSON.
@@ -10,6 +10,7 @@ Workspace Rust con seis crates:
   29 suscripciones: mids, cuatro libros, cuatro trades, 16 velas y cuatro contextos oracle.
 - `trading-quant`: indicadores decimales, estrategias puras y replay determinista.
 - `trading-paper`: cuenta, riesgo y ejecución simulada puros, con reloj/datos inyectados.
+- `trading-backtest`: exportación de solo lectura, replay offline, métricas y separación temporal.
 - `trading-storage`: PostgreSQL, migraciones embebidas, escrituras idempotentes y consultas.
 - `trading-server`: Axum, supervisor, recuperación histórica concurrente y frescura.
 
@@ -107,6 +108,15 @@ que revisa cierres y propuestas cada segundo. El histórico de fills reconstruye
 las posiciones y el efectivo; la comparación con el snapshot detecta discrepancias.
 La financiación conserva obligaciones independientes de posiciones abiertas.
 Ver [PAPER.md](PAPER.md) para estados, reglas, costes y limitaciones explícitas.
+
+## Backtesting offline
+
+El CLI independiente reutiliza Engine y Account con reloj inyectado. Los registros
+se liberan por disponibilidad y las entradas esperan latencia explícita. Cada tramo
+reinicia la cuenta y conserva solo warmup causal; el selector observa únicamente
+entrenamiento. Los informes incluyen huellas, auditoría y estados de métricas.
+La migración 0005 conserva la disponibilidad de tasas; `run` no accede a PostgreSQL
+ni al exchange. Ver [BACKTEST.md](BACKTEST.md) para límites y convenciones.
 
 ## Referencias oficiales
 

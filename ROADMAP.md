@@ -48,9 +48,9 @@ reinicios no duplican órdenes ni posiciones y PnL incluye costes.
 
 ## Fase 5 — backtesting y métricas
 
-- [ ] Reutilizar estrategias/riesgo con reloj y datos históricos deterministas.
-- [ ] Equity, drawdown, win rate, profit factor y Sharpe con muestra suficiente.
-- [ ] Separación temporal train/validation/test y evaluación fuera de muestra.
+- [x] Reutilizar estrategias/riesgo con reloj y datos históricos deterministas.
+- [x] Equity, drawdown, win rate, profit factor y Sharpe con muestra suficiente.
+- [x] Separación temporal train/validation/test y evaluación fuera de muestra.
 
 Aceptación: resultados reproducibles, sin leakage y con costes documentados.
 

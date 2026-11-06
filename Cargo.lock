@@ -2166,6 +2166,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "trading-backtest"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "rust_decimal",
+ "serde",
+ "serde_json",
+ "sha2",
+ "sqlx",
+ "tokio",
+ "trading-domain",
+ "trading-paper",
+ "trading-quant",
+]
+
+[[package]]
 name = "trading-domain"
 version = "0.1.0"
 dependencies = [
