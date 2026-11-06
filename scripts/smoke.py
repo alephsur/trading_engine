@@ -6,6 +6,7 @@ import time
 import urllib.error
 import urllib.request
 from decimal import Decimal
+from readiness import wait_ready
 
 base = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:3000"
 
@@ -15,16 +16,7 @@ def get(path):
         return json.load(response)
 
 
-for attempt in range(180):
-    try:
-        health = get("/health")
-        if health["status"] == "ready":
-            break
-    except (urllib.error.URLError, TimeoutError):
-        pass
-    time.sleep(1)
-else:
-    raise SystemExit("Engine did not become ready within 180 attempts")
+health = wait_ready(lambda: get("/health"))
 
 assert health["mode"] == "PAPER" and health["execution_enabled"] is False
 assert health["analysis_ready"]
