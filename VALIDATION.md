@@ -23,8 +23,12 @@
 - Formato y Clippy sin advertencias. CI incluye el smoke offline y todas las
   integraciones PostgreSQL, además de las pruebas anteriores de Docker y recuperación.
 
-La validación completa en GitHub Actions está pendiente del commit de esta fase.
-El socket Docker local sigue sin estar accesible; construcción/arranque se comprueban en CI.
+[GitHub Actions: fase 5](https://github.com/alephsur/trading_engine/actions/runs/42211181556)
+terminó con **success** sobre `23a8a94`: formato, Clippy, las 46 pruebas,
+integraciones PostgreSQL 17, smoke offline de backtesting, construcción/arranque
+Docker, datos reales y recuperación tras reinicio. El socket Docker local sigue
+sin estar accesible; construcción/arranque se verificaron en CI. El resultado se
+registra en un commit posterior que solo modifica documentación.
 
 ## Alcance
 
