@@ -60,7 +60,8 @@ Aceptación: resultados reproducibles, sin leakage y con costes documentados.
 - [x] Precios, velas, indicadores, señales, posiciones, historial y métricas.
 - [x] Controles paper, alertas y telemetría; sin activación LIVE en frontend.
 
-Aceptación: UI refleja estado persistido y degradación; tests de controles y E2E.
+Aceptación cumplida: UI refleja estado persistido y degradación; controles y E2E
+aprobados localmente y en CI, incluido Docker. Ver `DASHBOARD.md` y `VALIDATION.md`.
 
 ## Fase 7 — integración testnet
 

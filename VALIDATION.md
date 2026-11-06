@@ -23,9 +23,24 @@
 - El servicio local alcanzó `/health` ready con los cuatro mercados y observaciones
   persistidas en PostgreSQL. No se habilitó ejecución real.
 - Rustfmt, Clippy, formato frontend, smoke offline de backtesting y validación
-  de Compose aprobados. Docker local no accesible: build/arranque en CI pendiente.
+  de Compose aprobados. Docker local no accesible: build/arranque verificados en CI.
+- Smoke autenticado contra el proxy real de desarrollo: clave y origen rechazados
+  cuando no corresponden, pausa/reanudación confirmadas, replay idéntico y conflicto
+  de identificador. La clave temporal se generó en memoria y no se persistió.
+- La inspección visual real detectó el sobre `{candle, closed}` de la API: corregido
+  el desempaquetado; las fixtures usan ese contrato y excluyen velas provisionales.
+  E2E comprueba píxeles dibujados en el canvas y ausencia de errores de consola.
+- CI detectó un desbordamiento móvil no reproducido inicialmente en local. Se
+  corrigieron navegación adaptable y contención de gráficos; tres repeticiones
+  locales y el escenario remoto pasan. Servicios locales temporales detenidos.
 
-La validación remota de esta fase se registrará tras terminar GitHub Actions.
+[GitHub Actions: fase 6](https://github.com/alephsur/trading_engine/actions/runs/42215814891)
+terminó con **success** sobre `a916d68`: Rustfmt, Clippy, 52 pruebas Rust,
+PostgreSQL 17, smoke offline, formato/TypeScript/build frontend, 4 pruebas Vitest,
+Playwright con fallos de red y pantalla móvil, Docker completo, datos públicos
+reales, recuperación tras reinicio y dashboard servido por el contenedor con
+verificación del gráfico y rechazo de controles sin autorización.
+El resultado se registra en un commit posterior que solo modifica documentación.
 Detalles de uso y límites en [DASHBOARD.md](DASHBOARD.md).
 
 ---
