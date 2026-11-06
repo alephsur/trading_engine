@@ -28,7 +28,17 @@ para verificar aceptación remota, ejecución, cancelación y cierre. Ningún fi
 las pruebas anteriores se presenta como una operación auténtica del exchange.
 La fase 7 permanece abierta en `ROADMAP.md`; no se inicia fase 8.
 
-Resultado de GitHub Actions: pendiente de esta publicación.
+GitHub Actions del commit `6b4786b`: aprobado, incluida construcción/arranque
+Docker, dashboard contra el servicio real y recuperación tras reinicios.
+[Ejecución 42220006328](https://github.com/alephsur/trading_engine/actions/runs/42220006328).
+
+Revisión posterior `432a6a5`: los estados desconocidos, incluso si terminan en
+`Canceled` o `Rejected`, conservan el bloqueo; `triggered` tampoco implica cierre.
+Los estados reconocidos se interpretan mediante el enum del SDK fijado. Se excluye
+también `.env.*` del contexto Docker. Formato, Clippy y las ocho pruebas del adaptador
+(dos con PostgreSQL) aprobados localmente. Su
+[CI 42221045513](https://github.com/alephsur/trading_engine/actions/runs/42221045513)
+sigue en curso al registrar este informe.
 
 ---
 
