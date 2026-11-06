@@ -1,0 +1,85 @@
+# Roadmap
+
+Se entrega una fase por iteración, con verificación, commit y push antes de pasar
+a la siguiente. No se activa ejecución real sin autorización expresa.
+
+## Fase 1 — base y lectura pública
+
+- [x] Workspace modular, configuración por entorno y bloqueo de modos de ejecución.
+- [x] PostgreSQL, migraciones automáticas y eventos persistentes.
+- [x] Descubrimiento dinámico de BTC, ETH, SOL y HYPE.
+- [x] Precios WebSocket, heartbeats, reconexión y detección de datos obsoletos.
+- [x] API de salud, mercados, precios y logs estructurados.
+- [x] Tests unitarios, integración PostgreSQL y smoke E2E real.
+- [x] Dockerfile, Compose, CI, README y decisiones de arquitectura.
+- [ ] Verificar build y arranque de contenedores en un host con acceso a Docker.
+
+Aceptación funcional: compilación, fmt, clippy y tests pasan; DB conserva eventos;
+`/health` llega a 200 con los cuatro mercados y devuelve 503 al caer PostgreSQL;
+el servicio vuelve a estar listo tras recuperarse DB. Ver `VALIDATION.md`.
+
+## Fase 2 — datos de mercado completos
+
+- [ ] Persistir velas 1m/5m/15m/1h con claves idempotentes y distinguir cierres.
+- [ ] Ingerir operaciones y order book con tiempo de exchange.
+- [ ] Recuperar huecos tras reconectar con límites y reintentos acotados.
+- [ ] Tests de duplicados, huecos, eventos fuera de orden y reinicio.
+
+Aceptación: históricos y streams coherentes, sin duplicados ni señales con velas abiertas.
+
+## Fase 3 — indicadores y señales
+
+- [ ] EMA, RSI, ATR, MACD y volumen con fixtures calculados independientemente.
+- [ ] Interfaz Strategy y EMA trend, momentum/RSI, breakout y mean reversion.
+- [ ] Parámetros versionados, eventos de señales y replay determinista.
+
+Aceptación: señales usan solo datos disponibles al cierre; pruebas sin look-ahead.
+
+## Fase 4 — riesgo y paper trading
+
+- [ ] Reglas conservadoras, sizing decimal y restricciones oficiales del exchange.
+- [ ] PaperExecutor con spreads, fees, slippage, funding y liquidez.
+- [ ] Órdenes idempotentes, fills parciales, posiciones, stops y reconciliación.
+- [ ] Circuit breakers y auditoría de decisiones rechazadas.
+
+Aceptación: ninguna entrada elude riesgo; incertidumbre bloquea nuevas entradas;
+reinicios no duplican órdenes ni posiciones y PnL incluye costes.
+
+## Fase 5 — backtesting y métricas
+
+- [ ] Reutilizar estrategias/riesgo con reloj y datos históricos deterministas.
+- [ ] Equity, drawdown, win rate, profit factor y Sharpe con muestra suficiente.
+- [ ] Separación temporal train/validation/test y evaluación fuera de muestra.
+
+Aceptación: resultados reproducibles, sin leakage y con costes documentados.
+
+## Fase 6 — dashboard y observabilidad
+
+- [ ] Vue 3, TypeScript, Vuetify y Pinia; seleccionar gráficos mantenidos.
+- [ ] Precios, velas, indicadores, señales, posiciones, historial y métricas.
+- [ ] Controles paper, alertas y telemetría; sin activación LIVE en frontend.
+
+Aceptación: UI refleja estado persistido y degradación; tests de controles y E2E.
+
+## Fase 7 — integración testnet
+
+- [ ] Reevaluar SDK, firma, nonces, límites y reglas oficiales.
+- [ ] Integrar órdenes testnet, cancelaciones y reconciliación.
+- [ ] Inyectar caídas, respuestas inciertas y fills parciales.
+
+Aceptación: órdenes de prueba trazables, sin duplicados, recuperación demostrada.
+
+## Fase 8 — preparar LIVE sin activarlo
+
+- [ ] Adaptador separado, secretos protegidos y doble bloqueo de activación.
+- [ ] Runbook operativo, reconciliación y pruebas de denegación por defecto.
+
+Aceptación: LIVE permanece desactivado; activación requiere autorización explícita.
+
+## Fase 9 — IA supervisada
+
+- [ ] Interfaces para contexto, explicación y análisis posterior.
+- [ ] Versionar propuestas y validarlas mediante backtesting y aprobación.
+- [ ] Tests que impidan acceso de IA a límites de riesgo y ejecución.
+
+Aceptación: IA solo asesora; toda modificación de estrategia pasa pruebas y aprobación.

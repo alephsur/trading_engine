@@ -1,0 +1,31 @@
+services:
+  postgres:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_USER: trading
+      POSTGRES_PASSWORD: local_only
+      POSTGRES_DB: trading
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trading -d trading"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  engine:
+    build: .
+    environment:
+      DATABASE_URL: postgres://trading:local_only@postgres:5432/trading
+      BIND_ADDR: 0.0.0.0:3000
+      TRADING_MODE: PAPER
+      RUST_LOG: info
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    init: true
+volumes:
+  postgres_data:

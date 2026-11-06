@@ -1,0 +1,29 @@
+name: Rust CI
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-bookworm
+        env:
+          POSTGRES_USER: trading
+          POSTGRES_PASSWORD: local_only
+          POSTGRES_DB: trading
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U trading -d trading"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgres://trading:local_only@localhost:5432/trading
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install 1.96.0 --component rustfmt --component clippy --profile minimal
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - run: cargo test --workspace --locked
+      - run: cargo test -p trading-storage --locked -- --ignored
+      - run: docker compose config --quiet
+      - run: docker build -t trading-engine:ci .

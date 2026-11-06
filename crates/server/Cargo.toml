@@ -1,0 +1,18 @@
+[package]
+name = "trading-server"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+[dependencies]
+anyhow.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+sqlx.workspace = true
+trading-domain = { path = "../domain" }
+trading-storage = { path = "../storage" }
+trading-market-data = { path = "../market-data" }
+axum = "0.8"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
