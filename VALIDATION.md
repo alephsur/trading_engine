@@ -11,8 +11,10 @@
   El recibo de prueba no es una aprobación humana ni desplegó configuración alguna.
 - Formato/Clippy aprobados. Ejemplos de prompt/ingesta ejecutados. No se llamó a
   ningún proveedor LLM ni se modificó una estrategia del servidor o cuenta remota.
-- CI de publicación pendiente. El proveedor LLM sigue sin configurar; solo existe
-  el contrato Advisor y la implementación de respuestas importadas.
+- [CI fase 9](https://github.com/alephsur/trading_engine/actions/runs/43008950242)
+  aprobado para `959ff86`, incluidos el nuevo smoke de asesoría, Docker, dashboard
+  contra servicio real y recuperación. El proveedor LLM sigue sin configurar;
+  existe el contrato Advisor y la implementación de respuestas importadas.
 
 ---
 
@@ -24,7 +26,9 @@
   abrir un archivo de orden o clave. No hay dependencias de red/firma en el módulo.
 - Formato, Clippy y evaluación CLI de ejemplo aprobados. El informe distingue
   evidencia importada de una consulta autenticada al exchange.
-- Ninguna clave ni orden de producción utilizada. CI de publicación pendiente.
+- Ninguna clave ni orden de producción utilizada.
+- [CI fase 8](https://github.com/alephsur/trading_engine/actions/runs/43007972158)
+  aprobado para `19c5f29`, incluidos Docker, dashboard real y recuperación.
 
 ---
 
