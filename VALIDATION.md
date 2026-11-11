@@ -23,8 +23,8 @@
   cambian los resultados deterministas previos. El CI incluye el smoke público
   testnet, sin claves ni escrituras firmadas.
 
-**Pendiente:** cuenta testnet financiada/API wallet aprobada y configuración local
-para verificar aceptación remota, ejecución, cancelación y cierre. Ningún fill de
+**Pendiente:** verificar aceptación remota, ejecución, cancelación y cierre cuando
+el mercado testnet permita superar los controles de entrada. Ningún fill de
 las pruebas anteriores se presenta como una operación auténtica del exchange.
 La fase 7 permanece abierta en `ROADMAP.md`; no se inicia fase 8.
 
@@ -51,11 +51,22 @@ regresión Python aprobadas e incorporadas a CI cubren recuperación, agotamient
 del presupuesto, estado degradado persistente y respuestas inválidas.
 
 [CI 42229938591](https://github.com/alephsur/trading_engine/actions/runs/42229938591)
-en curso al registrar este informe: formato, Clippy, Rust, PostgreSQL, backtesting,
-consulta pública testnet y comprobaciones de formato/build/tests del dashboard
-aprobados. La instalación de Chromium sigue en curso; despliegue y recuperación
-pendientes de esta ejecución. La aceptación con cuenta testnet continúa pendiente:
-no existe `.env.testnet` local y no se han enviado órdenes firmadas.
+aprobado, incluidos navegador, despliegue Docker y recuperación.
+
+## Cuenta testnet configurada — 11 de noviembre de 2026
+
+- `.env.testnet` disponible; PostgreSQL accesible y clave de API wallet cargada
+  correctamente. El primer intento se bloqueó por permisos del archivo de clave;
+  se corrigieron a `600` antes de continuar, sin mostrar su contenido.
+- Cuenta sin posiciones ni órdenes abiertas, equity de prueba `499.758363` USDC.
+- Propuestas de BTC/ETH rechazadas por profundidad ejecutable insuficiente;
+  SOL por spread excesivo; HYPE por libro sin contraparte. Se comprobó también
+  una propuesta BTC de aproximadamente 12 USDC, rechazada por profundidad.
+  No se relajaron los controles ni se enviaron órdenes al exchange.
+- Reconciliación final: cero solicitudes persistidas, cero posiciones, cero órdenes
+  abiertas, `positions_reconciled=true` y equity sin cambios (`499.758363`).
+- La carga local de la clave no demuestra autorización remota: sigue pendiente
+  la aceptación de una orden firmada y el ciclo cancelación/cierre. Fase 7 abierta.
 
 ---
 

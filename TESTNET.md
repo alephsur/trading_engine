@@ -12,6 +12,10 @@ Implementación y pruebas deterministas disponibles. La consulta pública real
 confirmó BTC, ETH, SOL y HYPE en testnet el 6 de noviembre de 2026, con índices
 descubiertos de nuevo (distintos de mainnet). **La aceptación de órdenes firmadas
 contra el exchange requiere una cuenta testnet financiada y una API wallet aprobada.**
+El 11 de noviembre se verificó la configuración local y una cuenta financiada;
+las propuestas se rechazaron antes de enviar por falta de profundidad, spread
+excesivo o libro vacío. La cuenta terminó plana y sin solicitudes enviadas.
+La autorización remota del firmante todavía no está demostrada.
 Mientras esa prueba no esté registrada, la fase no se considera validada de extremo
 a extremo. Las fixtures no se presentan como ejecuciones reales.
 

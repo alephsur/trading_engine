@@ -71,8 +71,9 @@ aprobados localmente y en CI, incluido Docker. Ver `DASHBOARD.md` y `VALIDATION.
 - [ ] Validar órdenes firmadas, cancelación y cierre contra una cuenta testnet financiada.
 
 Aceptación: órdenes de prueba trazables, sin duplicados, recuperación demostrada.
-Implementación local disponible; aceptación externa pendiente de configuración
-de cuenta testnet. No se avanza a fase 8 hasta registrar ese resultado.
+Cuenta testnet configurada y financiada; las propuestas del 11-11-2026 se rechazaron
+antes del envío por controles de mercado. Aceptación firmada pendiente, sin relajar
+límites. No se avanza a fase 8 hasta registrar ese resultado.
 
 ## Fase 8 — preparar LIVE sin activarlo
 

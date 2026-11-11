@@ -138,4 +138,5 @@ El ejecutable independiente `trading-testnet` incorpora órdenes de prueba acota
 cancelaciones, cierres reduce-only y reconciliación persistente. El servidor y el
 dashboard permanecen PAPER. Configuración, límites y procedimiento en
 [TESTNET.md](TESTNET.md). La validación firmada contra el exchange está pendiente
-de una cuenta testnet financiada; las pruebas locales no la sustituyen.
+de condiciones de mercado que permitan las pruebas con la cuenta testnet ya
+configurada y financiada; las pruebas locales no la sustituyen.
