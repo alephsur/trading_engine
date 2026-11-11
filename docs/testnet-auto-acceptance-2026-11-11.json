@@ -1,0 +1,51 @@
+{
+  "network": "TESTNET",
+  "date": "2026-11-11",
+  "scope": "supervised BTC EMA automatic session, no EMA cross during 120 seconds",
+  "leverage_verified": {
+    "type": "isolated",
+    "value": 1
+  },
+  "session_id": "btc-ema-auto-20261111",
+  "started_ms": 1794396984023,
+  "expires_ms": 1794397103994,
+  "ended_expired": true,
+  "entry_budget_consumed": false,
+  "claim": null,
+  "observations": [
+    {
+      "close_time": 1794396959999,
+      "input_hash": "4323308c66114e4911201a2eecb3b07da45cc371ddd540809bb4c50ed4534c9c",
+      "decisions": [
+        {
+          "direction": "hold",
+          "reason": "no_ema_cross",
+          "strategy": "ema_trend_v1"
+        }
+      ]
+    },
+    {
+      "close_time": 1794397019999,
+      "input_hash": "88deaed274e3d91ed78b232bbfd44ba3c75deab4ecd077e6d90abfda458a3a99",
+      "decisions": [
+        {
+          "direction": "hold",
+          "reason": "no_ema_cross",
+          "strategy": "ema_trend_v1"
+        }
+      ]
+    },
+    {
+      "close_time": 1794397019999,
+      "input_hash": "88deaed274e3d91ed78b232bbfd44ba3c75deab4ecd077e6d90abfda458a3a99",
+      "decisions": [
+        {
+          "direction": "hold",
+          "reason": "no_ema_cross",
+          "strategy": "ema_trend_v1"
+        }
+      ]
+    }
+  ],
+  "limits": "No automatic exchange dispatch or fill exercised; full continuous protection monitoring and end-to-end entry acceptance remain pending."
+}

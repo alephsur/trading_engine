@@ -102,7 +102,7 @@ multiusuario. Ver `ADVISOR.md`.
 
 - [x] 10A: observador BTC/EMA con velas testnet, sesiones acotadas, persistencia,
   pausa y recuperación del plazo tras reiniciar. Lectura externa validada.
-- [ ] 10B: conectar señal reciente con riesgo y ejecución; máximo una entrada
+- [x] 10B: conectar señal reciente con riesgo y ejecución; máximo una entrada
   por sesión, deduplicación durable y comprobación de apalancamiento 1x.
 - [ ] 10C: monitor continuo de pérdidas/protecciones y ensayo automático
   completo con recuperación.

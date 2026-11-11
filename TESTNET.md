@@ -249,11 +249,61 @@ guardar nuevas observaciones, incluso si ocurre durante una petición.
 
 `max_entries: 1` registra la preferencia acordada para el futuro ejecutor;
 **este observador permite cero entradas**. No es una aprobación de ejecución
-ni un monitor de posiciones, pérdidas, financiación o protecciones. La siguiente
-fase debe conectar riesgo, reconciliación, deduplicación de órdenes y límite
-de una entrada antes de habilitar un ensayo automático. BTC deberá estar a 1x
-en la cuenta testnet; no se requieren credenciales de mainnet.
+ni un monitor de posiciones, pérdidas, financiación o protecciones. El ejecutor separado de la fase 10B, descrito a continuación, exige una
+activación adicional. No se requieren credenciales de mainnet.
 
 Validación real del 11-11-2026: lectura y persistencia de 100 velas cerradas,
 EMA `hold/no_ema_cross`, sin firma ni envío. Las pruebas con velas sintéticas
 se mantienen separadas de esta comprobación externa.
+
+## Ejecutor BTC/EMA de un intento — fase 10B
+
+Disponible únicamente en el CLI testnet, separado del observador y del servidor
+PAPER. Requiere ambas confirmaciones: `TESTNET_CONFIRM=TESTNET_ONLY` de la
+configuración existente y `TESTNET_AUTO_CONFIRM=BTC_EMA_ONE_ENTRY`. Ejemplo:
+
+```sh
+TESTNET_AUTO_CONFIRM=BTC_EMA_ONE_ENTRY cargo run --locked -p trading-testnet -- auto-run btc-ema-auto-001 config/testnet-observer.json
+cargo run --locked -p trading-testnet -- auto-status btc-ema-auto-001
+cargo run --locked -p trading-testnet -- auto-pause btc-ema-auto-001
+```
+
+`auto-once ID config.json` realiza un ciclo con la misma autorización. El ID
+conserva la fecha inicial, el plazo, la pausa y el presupuesto al reiniciar.
+Solo se consideran cruces EMA de velas cerradas **después de activar la sesión**
+y con antigüedad máxima de 120 segundos. No se fuerza una entrada si no hay cruce.
+
+Antes de preparar una entrada: reconciliación de cuenta plana/sin órdenes,
+planificación con libro reciente, límites existentes de liquidez y riesgo,
+preflight actualizado y consulta `activeAssetData` que exige BTC aislado a 1x.
+El tamaño máximo es 20 USDC, riesgo máximo 0,25% del equity, participación máxima
+10% de profundidad ejecutable y stop basado en dos ATR (mínimo aproximado 0,5%
+del precio), con objetivo a dos veces esa distancia. El guard existente exige
+distancia al stop <=3%, riesgo dentro de límite incluyendo colchón de ejecución
+y costes, mínimo nocional 10 USDC, y límites diarios de entrada/pérdida. Si el
+tamaño resultante no cumple, se rechaza sin relajar ninguna restricción.
+
+El presupuesto es **un intento**, no un fill garantizado: se consume en PostgreSQL
+antes de firmar. Un rechazo, caída o error posterior no lo devuelve. Una señal
+consumida tampoco puede repetirse usando otro ID. La pérdida de oportunidad al
+caer entre reserva y firma es intencionada. La pausa/expiración/vigencia se
+comprueban de nuevo al reclamar el envío; una orden ya reclamada y en vuelo puede
+llegar después de pedir pausa. Las respuestas inciertas nunca se reenvían.
+
+El proceso termina al consumir el intento o vencer el plazo; los errores intentan
+persistir una pausa y detienen el proceso. Ctrl+C entre ciclos persiste una pausa.
+Un fallo de base de datos puede impedir guardarla, pero no habilita un reenvío de
+un intento consumido. El informe distingue reserva de intento y estado real de
+transporte; no interpreta una reserva como una ejecución.
+
+**Límite operativo:** envía un bracket IOC con stop/objetivo reduce-only y hace
+reconciliación posterior. No es todavía un servicio continuo de protección,
+financiación y pérdidas: fase 10C pendiente. El fin de sesión o la pausa no cierran
+una posición ni cancelan protecciones. Revisar cuenta/órdenes y usar `reconcile`
+o `watch` para seguimiento; el ensayo debe ser supervisado. Una ACK no garantiza
+que todas las patas estén aceptadas: comprobar el informe y la cuenta.
+
+Ensayo supervisado del 11-11-2026: sesión de 120 segundos completada por
+expiración, sin cruce EMA ni intento de entrada. Se verificó BTC aislado a 1x.
+Esto valida lectura/reconciliación/espera/expiración, no un fill automático.
+Evidencia: `docs/testnet-auto-acceptance-2026-11-11.json`.

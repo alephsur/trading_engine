@@ -1,5 +1,6 @@
 use anyhow::{Result, ensure};
 use trading_testnet::{
+    automation,
     client::Client,
     executor,
     model::Intent,
@@ -22,7 +23,7 @@ async fn run() -> Result<()> {
     let args: Vec<_> = std::env::args().skip(1).collect();
     ensure!(
         !args.is_empty(),
-        "usage: trading-testnet markets | plan SYMBOL buy|sell | reconcile | watch | check ID intent.json | submit ID intent.json | observe-once ID config.json | observe-run ID config.json | observe-status ID | observe-pause ID"
+        "usage: trading-testnet markets | plan SYMBOL buy|sell | reconcile | watch | check ID intent.json | submit ID intent.json | observe-once ID config.json | observe-run ID config.json | observe-status ID | observe-pause ID | auto-once ID config.json | auto-run ID config.json | auto-status ID | auto-pause ID"
     );
     let client = Client::new()?;
     if args == ["markets"] {
@@ -59,6 +60,58 @@ async fn run() -> Result<()> {
         return Ok(());
     }
     let pool = trading_storage::connect(&std::env::var("DATABASE_URL")?).await?;
+    if args.len() == 2 && matches!(args[0].as_str(), "auto-status" | "auto-pause") {
+        if args[0] == "auto-pause" {
+            observer::pause(&pool, &account, &args[1]).await?;
+        }
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&automation::status(&pool, &account, &args[1]).await?)?
+        );
+        return Ok(());
+    }
+    if args.len() == 3 && matches!(args[0].as_str(), "auto-once" | "auto-run") {
+        ensure!(
+            std::env::var("TESTNET_CONFIRM").ok().as_deref() == Some("TESTNET_ONLY")
+                && std::env::var("TESTNET_AUTO_CONFIRM").ok().as_deref()
+                    == Some("BTC_EMA_ONE_ENTRY"),
+            "automatic testnet requires TESTNET_CONFIRM=TESTNET_ONLY and TESTNET_AUTO_CONFIRM=BTC_EMA_ONE_ENTRY"
+        );
+        let bytes = std::fs::read(&args[2])?;
+        ensure!(bytes.len() <= 4096, "automatic configuration too large");
+        let config: observer::Config = serde_json::from_slice(&bytes)?;
+        config.validate()?;
+        let signer = load_signer(&account)?;
+        loop {
+            let result = match automation::tick(
+                &client, &pool, &signer, &account, &args[1], &config,
+            )
+            .await
+            {
+                Ok(result) => result,
+                Err(error) => {
+                    // Never resume automatic entries after an operational error without a new session.
+                    let _ = observer::pause(&pool, &account, &args[1]).await;
+                    return Err(error);
+                }
+            };
+            println!("{}", serde_json::to_string_pretty(&result)?);
+            if args[0] == "auto-once"
+                || result["paused"] == true
+                || result["expired"] == true
+                || result["entry_budget_consumed"] == true
+            {
+                return Ok(());
+            }
+            tokio::select! {
+                _ = tokio::signal::ctrl_c() => {
+                    observer::pause(&pool,&account,&args[1]).await?;
+                    return Ok(());
+                },
+                _ = tokio::time::sleep(std::time::Duration::from_secs(config.poll_seconds)) => {}
+            }
+        }
+    }
     if args.len() == 2 && matches!(args[0].as_str(), "observe-status" | "observe-pause") {
         if args[0] == "observe-pause" {
             observer::pause(&pool, &account, &args[1]).await?;
@@ -118,33 +171,38 @@ async fn run() -> Result<()> {
             std::env::var("TESTNET_CONFIRM").ok().as_deref() == Some("TESTNET_ONLY"),
             "set TESTNET_CONFIRM=TESTNET_ONLY to allow testnet writes"
         );
-        let path = std::env::var("TESTNET_PRIVATE_KEY_FILE")
-            .map_err(|_| anyhow::anyhow!("configure TESTNET_PRIVATE_KEY_FILE"))?;
-        let metadata = std::fs::metadata(&path)
-            .map_err(|_| anyhow::anyhow!("testnet key file unavailable"))?;
-        ensure!(
-            metadata.is_file() && metadata.len() <= 256,
-            "invalid testnet key file"
-        );
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            ensure!(
-                metadata.permissions().mode() & 0o077 == 0,
-                "key file must not be accessible by group or others (chmod 600)"
-            );
-        }
-        let key = Zeroizing::new(
-            std::fs::read_to_string(path)
-                .map_err(|_| anyhow::anyhow!("cannot read testnet key file"))?,
-        );
-        let signer = TestnetSigner::load(key)?;
-        ensure!(
-            signer.address() != account,
-            "use a dedicated approved API wallet, not the master private key"
-        );
+        let signer = load_signer(&account)?;
         executor::submit(&client, &pool, &signer, &account, &args[1], &intent).await?
     };
     println!("{}", serde_json::to_string_pretty(&result)?);
     Ok(())
+}
+
+fn load_signer(account: &str) -> Result<TestnetSigner> {
+    let path = std::env::var("TESTNET_PRIVATE_KEY_FILE")
+        .map_err(|_| anyhow::anyhow!("configure TESTNET_PRIVATE_KEY_FILE"))?;
+    let metadata =
+        std::fs::metadata(&path).map_err(|_| anyhow::anyhow!("testnet key file unavailable"))?;
+    ensure!(
+        metadata.is_file() && metadata.len() <= 256,
+        "invalid testnet key file"
+    );
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        ensure!(
+            metadata.permissions().mode() & 0o077 == 0,
+            "key file must not be accessible by group or others (chmod 600)"
+        );
+    }
+    let key = Zeroizing::new(
+        std::fs::read_to_string(path)
+            .map_err(|_| anyhow::anyhow!("cannot read testnet key file"))?,
+    );
+    let signer = TestnetSigner::load(key)?;
+    ensure!(
+        signer.address() != account,
+        "use a dedicated approved API wallet, not the master private key"
+    );
+    Ok(signer)
 }

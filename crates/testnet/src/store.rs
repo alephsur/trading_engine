@@ -142,6 +142,18 @@ pub async fn prepare(
 /// At-most-once transport attempt. A crash after this commit is intentionally uncertain.
 pub async fn claim(pool: &PgPool, account: &str, id: &str) -> Result<Option<Value>> {
     let mut tx = pool.begin().await?;
+    // Pause/expiry are checked at the durable dispatch boundary, not only before planning.
+    // After this transaction commits, an in-flight send may still complete after a pause.
+    let guard: Option<(bool,i64,i64)> = sqlx::query_as("SELECT o.paused,o.expires_ms,c.close_ms FROM testnet_auto_claims c JOIN testnet_observer_sessions o USING(account,session_id) WHERE c.account=$1 AND c.command_id=$2 FOR UPDATE OF o")
+        .bind(account).bind(id).fetch_optional(&mut *tx).await?;
+    if guard.is_some_and(|(paused, expires, close)| {
+        paused || now_ms() >= expires || !(1..=120_000).contains(&(now_ms() - close))
+    }) {
+        sqlx::query("UPDATE testnet_requests SET state='expired' WHERE account=$1 AND command_id=$2 AND state='prepared'")
+            .bind(account).bind(id).execute(&mut *tx).await?;
+        tx.commit().await?;
+        return Ok(None);
+    }
     sqlx::query("UPDATE testnet_requests SET state='expired' WHERE account=$1 AND command_id=$2 AND state='prepared' AND expires_ms<=$3").bind(account).bind(id).bind(now_ms()).execute(&mut *tx).await?;
     let value:Option<Value>=sqlx::query_scalar("UPDATE testnet_requests SET state='uncertain' WHERE account=$1 AND command_id=$2 AND state='prepared' AND expires_ms>$3 RETURNING signed_request").bind(account).bind(id).bind(now_ms()).fetch_optional(&mut *tx).await?;
     if value.is_some() {
