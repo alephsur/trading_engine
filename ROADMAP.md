@@ -68,12 +68,13 @@ aprobados localmente y en CI, incluido Docker. Ver `DASHBOARD.md` y `VALIDATION.
 - [x] Reevaluar SDK, firma, nonces, límites y reglas oficiales.
 - [x] Implementar órdenes testnet, cancelaciones y reconciliación en CLI aislado.
 - [x] Inyectar caídas, respuestas inciertas y fills parciales.
-- [ ] Validar órdenes firmadas, cancelación y cierre contra una cuenta testnet financiada.
+- [x] Validar órdenes firmadas, cancelación y cierre contra una cuenta testnet financiada.
 
 Aceptación: órdenes de prueba trazables, sin duplicados, recuperación demostrada.
-Cuenta testnet configurada y financiada; las propuestas del 11-11-2026 se rechazaron
-antes del envío por controles de mercado. Aceptación firmada pendiente, sin relajar
-límites. No se avanza a fase 8 hasta registrar ese resultado.
+Aceptación externa completada el 11-11-2026: dos entradas BTC, fill parcial,
+cancelación efectiva de cierre ALO, cierre IOC, replay sin duplicación y cuenta
+final plana/sin órdenes. Evidencia en `docs/testnet-acceptance-2026-11-11.json`.
+El planificador adapta tamaño/profundidad sin relajar los límites de entrada.
 
 ## Fase 8 — preparar LIVE sin activarlo
 

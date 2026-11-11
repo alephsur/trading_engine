@@ -260,3 +260,42 @@ fn plans_are_small_unsigned_and_resting_closes_stay_reduce_only() {
     assert_eq!(wire["orders"][0]["t"]["limit"]["tif"], "Alo");
     assert!(model::plan("BTC", true, &markets(), &book(), &state, 1000).is_err());
 }
+
+#[test]
+fn planner_sizes_to_depth_and_searches_only_within_existing_limits() {
+    for buy in [true, false] {
+        let mut b = book();
+        let side = usize::from(buy);
+        b.levels[side][0].sz = dec("1.5");
+        let planned = model::plan("BTC", buy, &markets(), &b, &state(), 1000).unwrap();
+        let Intent::Entry {
+            quantity, limit, ..
+        } = &planned
+        else {
+            panic!("entry expected")
+        };
+        assert_eq!(*quantity, dec("0.15"));
+        assert!(*quantity * *limit >= dec("10") && *quantity * *limit < dec("20"));
+        b.levels[side][0].sz = dec("0.1");
+        assert!(model::plan("BTC", buy, &markets(), &b, &state(), 1000).is_err());
+        b.levels[side].push(trading_domain::data::Level {
+            px: if buy { dec("100.1") } else { dec("99.9") },
+            sz: dec("2"),
+            n: 1,
+        });
+        let planned = model::plan("BTC", buy, &markets(), &b, &state(), 1000).unwrap();
+        model::entry(
+            &planned,
+            "account",
+            "depth-01",
+            &markets(),
+            &b,
+            &state(),
+            1000,
+        )
+        .unwrap();
+        b.levels[side][1].px = if buy { dec("101") } else { dec("99") };
+        assert!(model::plan("BTC", buy, &markets(), &b, &state(), 1000).is_err());
+        assert!(model::plan("BTC", buy, &markets(), &b, &state(), 16000).is_err());
+    }
+}

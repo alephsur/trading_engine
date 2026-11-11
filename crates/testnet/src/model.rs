@@ -300,51 +300,63 @@ pub fn plan(
 ) -> Result<Intent> {
     let m = market(markets, symbol)?;
     fresh_book(book, symbol, now)?;
-    let px = book.levels[usize::from(buy)][0].px;
-    let limit = price(
-        px * if buy { dec("1.0002") } else { dec("0.9998") },
-        m.metadata.sz_decimals,
-        buy,
-    );
-    let stop = price(
-        limit * if buy { dec("0.99") } else { dec("1.01") },
-        m.metadata.sz_decimals,
-        !buy,
-    );
-    let take_profit = price(
-        limit * if buy { dec("1.02") } else { dec("0.98") },
-        m.metadata.sz_decimals,
-        !buy,
-    );
-    let worst = price(
-        stop * if buy { dec("0.98") } else { dec("1.02") },
-        m.metadata.sz_decimals,
-        !buy,
-    );
-    let equity = decimal(&state["marginSummary"]["accountValue"])?;
-    let quantity = (dec("20") / limit)
-        .min(equity * dec("0.15") / limit)
-        .min(equity * dec("0.0025") / ((limit - worst).abs() + limit * dec("0.002")))
-        .round_dp_with_strategy(
+    for level in &book.levels[usize::from(buy)] {
+        let px = level.px;
+        let limit = price(
+            px * if buy { dec("1.0002") } else { dec("0.9998") },
             m.metadata.sz_decimals,
-            rust_decimal::RoundingStrategy::ToZero,
+            buy,
         );
-    let intent = Intent::Entry {
-        symbol: symbol.into(),
-        buy,
-        quantity,
-        limit,
-        stop,
-        take_profit,
-    };
-    entry(
-        &intent,
-        "unsigned-plan",
-        "unsigned-plan",
-        markets,
-        book,
-        state,
-        now,
-    )?;
-    Ok(intent)
+        let stop = price(
+            limit * if buy { dec("0.99") } else { dec("1.01") },
+            m.metadata.sz_decimals,
+            !buy,
+        );
+        let take_profit = price(
+            limit * if buy { dec("1.02") } else { dec("0.98") },
+            m.metadata.sz_decimals,
+            !buy,
+        );
+        let worst = price(
+            stop * if buy { dec("0.98") } else { dec("1.02") },
+            m.metadata.sz_decimals,
+            !buy,
+        );
+        let equity = decimal(&state["marginSummary"]["accountValue"])?;
+        let depth: D = book.levels[usize::from(buy)]
+            .iter()
+            .filter(|l| if buy { l.px <= limit } else { l.px >= limit })
+            .map(|l| l.sz)
+            .sum();
+        let quantity = (dec("20") / limit)
+            .min(depth * dec("0.1"))
+            .min(equity * dec("0.15") / limit)
+            .min(equity * dec("0.0025") / ((limit - worst).abs() + limit * dec("0.002")))
+            .round_dp_with_strategy(
+                m.metadata.sz_decimals,
+                rust_decimal::RoundingStrategy::ToZero,
+            );
+        let intent = Intent::Entry {
+            symbol: symbol.into(),
+            buy,
+            quantity,
+            limit,
+            stop,
+            take_profit,
+        };
+        if entry(
+            &intent,
+            "unsigned-plan",
+            "unsigned-plan",
+            markets,
+            book,
+            state,
+            now,
+        )
+        .is_ok()
+        {
+            return Ok(intent);
+        }
+    }
+    anyhow::bail!("no executable plan within price, liquidity and risk limits")
 }

@@ -1,4 +1,4 @@
-# Verificación — fase 7 (aceptación externa pendiente)
+# Verificación — fase 7 (aceptación externa completada)
 
 ## Resultado local
 
@@ -23,10 +23,30 @@
   cambian los resultados deterministas previos. El CI incluye el smoke público
   testnet, sin claves ni escrituras firmadas.
 
-**Pendiente:** verificar aceptación remota, ejecución, cancelación y cierre cuando
-el mercado testnet permita superar los controles de entrada. Ningún fill de
-las pruebas anteriores se presenta como una operación auténtica del exchange.
-La fase 7 permanece abierta en `ROADMAP.md`; no se inicia fase 8.
+## Aceptación externa completada
+
+El 11-11-2026 se ejecutaron dos ensayos acotados BTC contra testnet:
+
+- Primer IOC: solicitado `0.00015`, ejecutado `0.00014` a `74694`; ambas protecciones
+  aceptadas. El cierre ALO se ejecutó antes de cancelar: se conservó el rechazo de
+  cancelación y se verificó el fill, sin confundirlo con una cancelación exitosa.
+- Segundo IOC: `0.00026` a `75266`. Un cierre ALO quedó abierto, recibió cancelación
+  exitosa y `orderStatus` confirmó `canceled`. Cierre final IOC: `0.00026` a `75191`.
+- Las protecciones quedaron `reduceOnlyCanceled` al cerrarse las posiciones.
+- Repetir el primer comando desde otro proceso conservó nonce/respuesta y número
+  de solicitudes. No se duplicaron órdenes. Fallos de red/DB siguen probándose
+  mediante inyección local, no mediante interrupción del exchange.
+- Resultado final: cero posiciones, cero órdenes, siete solicitudes reconciliadas,
+  equity inicial `499.758363`, final `499.757821` USDC de prueba. No se extrapola
+  rentabilidad a partir de estos ensayos. La cuenta tenía margen aislado 2x; el
+  harness no cambió esa configuración y limitó la exposición por nocional.
+- Evidencia sin claves ni firmas en `docs/testnet-acceptance-2026-11-11.json`.
+
+Cambio de código: el planificador adapta cantidad al 10% de profundidad y recorre
+niveles cercanos conservando todas las validaciones de entrada. Siete pruebas de
+modelo/firma y dos PostgreSQL aprobadas, además de formato y Clippy. La regresión
+cubre ambos lados, reducción de tamaño, mínimo negociable, niveles demasiado
+lejanos y datos obsoletos. CI de esta publicación pendiente.
 
 GitHub Actions del commit `6b4786b`: aprobado, incluida construcción/arranque
 Docker, dashboard contra el servicio real y recuperación tras reinicios.
@@ -53,7 +73,7 @@ del presupuesto, estado degradado persistente y respuestas inválidas.
 [CI 42229938591](https://github.com/alephsur/trading_engine/actions/runs/42229938591)
 aprobado, incluidos navegador, despliegue Docker y recuperación.
 
-## Cuenta testnet configurada — 11 de noviembre de 2026
+## Intentos previos a la aceptación — 11 de noviembre de 2026
 
 - `.env.testnet` disponible; PostgreSQL accesible y clave de API wallet cargada
   correctamente. El primer intento se bloqueó por permisos del archivo de clave;
@@ -66,7 +86,8 @@ aprobado, incluidos navegador, despliegue Docker y recuperación.
 - Reconciliación final: cero solicitudes persistidas, cero posiciones, cero órdenes
   abiertas, `positions_reconciled=true` y equity sin cambios (`499.758363`).
 - La carga local de la clave no demuestra autorización remota: sigue pendiente
-  la aceptación de una orden firmada y el ciclo cancelación/cierre. Fase 7 abierta.
+  la aceptación de una orden firmada y el ciclo cancelación/cierre en ese momento;
+  posteriormente completados según el registro de aceptación anterior.
 
 ---
 

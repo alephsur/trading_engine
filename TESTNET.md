@@ -8,16 +8,14 @@ no hay un parámetro para cambiarlo ni se siguen redirecciones.
 
 ## Estado de aceptación
 
-Implementación y pruebas deterministas disponibles. La consulta pública real
-confirmó BTC, ETH, SOL y HYPE en testnet el 6 de noviembre de 2026, con índices
-descubiertos de nuevo (distintos de mainnet). **La aceptación de órdenes firmadas
-contra el exchange requiere una cuenta testnet financiada y una API wallet aprobada.**
-El 11 de noviembre se verificó la configuración local y una cuenta financiada;
-las propuestas se rechazaron antes de enviar por falta de profundidad, spread
-excesivo o libro vacío. La cuenta terminó plana y sin solicitudes enviadas.
-La autorización remota del firmante todavía no está demostrada.
-Mientras esa prueba no esté registrada, la fase no se considera validada de extremo
-a extremo. Las fixtures no se presentan como ejecuciones reales.
+Aceptación externa completada el 11 de noviembre de 2026 con una API wallet
+autorizada y fondos de prueba. Se verificaron entrada parcialmente ejecutada,
+protecciones reduce-only, cierre ALO, cancelación efectiva, cierre IOC y replay de
+una solicitud tras reiniciar el CLI sin duplicación. La cuenta terminó sin posiciones
+ni órdenes abiertas, con todos los fills reconciliados. Evidencia real separada
+de las fixtures: [registro de aceptación](docs/testnet-acceptance-2026-11-11.json).
+Las pruebas de fallos de transporte/DB siguen siendo inyecciones locales; no se
+afirma haber provocado fallos del exchange. El ensayo no valida producción LIVE.
 
 ## Preparación local
 
@@ -58,7 +56,11 @@ cargo run --locked -p trading-testnet -- reconcile
 cargo run --locked -p trading-testnet -- watch
 ```
 
-`plan` también admite `sell`, ETH, SOL y HYPE. Si cambian los precios, `check` o
+`plan` también admite `sell`, ETH, SOL y HYPE. Recorre niveles del libro desde el
+mejor precio y limita la cantidad al 10% de la profundidad ejecutable. Devuelve la
+primera propuesta que supera todos los controles, incluida la distancia máxima
+de 20 bps al medio y el mínimo de 10 USDC; si ninguna cumple, rechaza el plan.
+Si cambian los precios, `check` o
 `submit` pueden rechazar el plan: generar otro **solo si el anterior nunca fue
 aceptado para envío**. Nunca cambiar de identificador para sortear una solicitud
 incierta. El mismo identificador y la misma intención no generan una segunda firma

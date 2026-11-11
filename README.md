@@ -137,6 +137,6 @@ para configurar la clave local, conocer las métricas y ejecutar las pruebas.
 El ejecutable independiente `trading-testnet` incorpora órdenes de prueba acotadas,
 cancelaciones, cierres reduce-only y reconciliación persistente. El servidor y el
 dashboard permanecen PAPER. Configuración, límites y procedimiento en
-[TESTNET.md](TESTNET.md). La validación firmada contra el exchange está pendiente
-de condiciones de mercado que permitan las pruebas con la cuenta testnet ya
-configurada y financiada; las pruebas locales no la sustituyen.
+[TESTNET.md](TESTNET.md). La validación firmada de entrada, cancelación y cierre
+contra testnet se completó; evidencia en
+[registro de aceptación](docs/testnet-acceptance-2026-11-11.json). LIVE sigue desactivado.

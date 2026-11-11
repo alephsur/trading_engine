@@ -1,0 +1,362 @@
+{
+  "network": "TESTNET",
+  "observed_ms": 1794393355997,
+  "initial_equity": "499.758363",
+  "final_equity": "499.757821",
+  "final_positions": [],
+  "final_open_orders": [],
+  "positions_reconciled": true,
+  "entry_replay_preserved_nonce_and_response": true,
+  "request_count": 7,
+  "requests": [
+    {
+      "command_id": "acceptance-final-close-02",
+      "intent": {
+        "kind": "close",
+        "limit": null,
+        "symbol": "BTC"
+      },
+      "state": "acknowledged",
+      "response": {
+        "response": {
+          "data": {
+            "statuses": [
+              {
+                "filled": {
+                  "avgPx": "75191.0",
+                  "cloid": "0x7333f0599e85640e1d85d6699dedfa45",
+                  "oid": 65075096711,
+                  "totalSz": "0.00026"
+                }
+              }
+            ]
+          },
+          "type": "order"
+        },
+        "status": "ok"
+      },
+      "reconciliation": {
+        "all_terminal": true,
+        "complete": true,
+        "observed_ms": 1794393356002,
+        "orders": [
+          {
+            "cloid": "0x7333f0599e85640e1d85d6699dedfa45",
+            "fees": "0.008797",
+            "filled": "0.00026",
+            "fills_reconciled": true,
+            "oid": 65075096711,
+            "original": "0.00026",
+            "remaining": "0.0",
+            "status": "filled"
+          }
+        ],
+        "safe_for_entry": true
+      }
+    },
+    {
+      "command_id": "acceptance-cancel-next-02",
+      "intent": {
+        "kind": "cancel",
+        "target": "acceptance-resting-next-02"
+      },
+      "state": "acknowledged",
+      "response": {
+        "response": {
+          "data": {
+            "statuses": [
+              "success"
+            ]
+          },
+          "type": "cancel"
+        },
+        "status": "ok"
+      },
+      "reconciliation": {
+        "all_terminal": true,
+        "complete": true,
+        "observed_ms": 1794393356002,
+        "orders": [
+          {
+            "cloid": "0xc7cca74e5adc7822e95e8ab646652fb4",
+            "fees": "0",
+            "filled": "0",
+            "fills_reconciled": true,
+            "oid": 65075046541,
+            "original": "0.00026",
+            "remaining": "0.00026",
+            "status": "canceled"
+          }
+        ],
+        "safe_for_entry": true
+      }
+    },
+    {
+      "command_id": "acceptance-resting-next-02",
+      "intent": {
+        "kind": "close",
+        "limit": "75816",
+        "symbol": "BTC"
+      },
+      "state": "acknowledged",
+      "response": {
+        "response": {
+          "data": {
+            "statuses": [
+              {
+                "resting": {
+                  "cloid": "0xc7cca74e5adc7822e95e8ab646652fb4",
+                  "oid": 65075046541
+                }
+              }
+            ]
+          },
+          "type": "order"
+        },
+        "status": "ok"
+      },
+      "reconciliation": {
+        "all_terminal": true,
+        "complete": true,
+        "observed_ms": 1794393356002,
+        "orders": [
+          {
+            "cloid": "0xc7cca74e5adc7822e95e8ab646652fb4",
+            "fees": "0",
+            "filled": "0",
+            "fills_reconciled": true,
+            "oid": 65075046541,
+            "original": "0.00026",
+            "remaining": "0.00026",
+            "status": "canceled"
+          }
+        ],
+        "safe_for_entry": true
+      }
+    },
+    {
+      "command_id": "acceptance-entry-next-02",
+      "intent": {
+        "buy": true,
+        "kind": "entry",
+        "limit": "75282",
+        "quantity": "0.00026",
+        "stop": "74529",
+        "symbol": "BTC",
+        "take_profit": "76787"
+      },
+      "state": "acknowledged",
+      "response": {
+        "response": {
+          "data": {
+            "statuses": [
+              {
+                "filled": {
+                  "avgPx": "75266.0",
+                  "cloid": "0x757ec24d5146e4ec1b53551335c66e5f",
+                  "oid": 65075024975,
+                  "totalSz": "0.00026"
+                }
+              },
+              "waitingForTrigger",
+              "waitingForTrigger"
+            ]
+          },
+          "type": "order"
+        },
+        "status": "ok"
+      },
+      "reconciliation": {
+        "all_terminal": true,
+        "complete": true,
+        "observed_ms": 1794393356001,
+        "orders": [
+          {
+            "cloid": "0x757ec24d5146e4ec1b53551335c66e5f",
+            "fees": "0.008806",
+            "filled": "0.00026",
+            "fills_reconciled": true,
+            "oid": 65075024975,
+            "original": "0.00026",
+            "remaining": "0.0",
+            "status": "filled"
+          },
+          {
+            "cloid": "0x5a2c41b1aedc236118baf95cfcd2e032",
+            "fees": "0",
+            "filled": "0",
+            "fills_reconciled": true,
+            "oid": 65075024976,
+            "original": "0.00026",
+            "remaining": "0.00026",
+            "status": "reduceOnlyCanceled"
+          },
+          {
+            "cloid": "0x5de1cd4dcdd7366d5d569f41599e6261",
+            "fees": "0",
+            "filled": "0",
+            "fills_reconciled": true,
+            "oid": 65075024977,
+            "original": "0.00026",
+            "remaining": "0.00026",
+            "status": "reduceOnlyCanceled"
+          }
+        ],
+        "safe_for_entry": true
+      }
+    },
+    {
+      "command_id": "acceptance-cancel-next-01",
+      "intent": {
+        "kind": "cancel",
+        "target": "acceptance-resting-next-01"
+      },
+      "state": "rejected",
+      "response": {
+        "response": {
+          "data": {
+            "statuses": [
+              {
+                "error": "Order was never placed, already canceled, or filled. asset=3"
+              }
+            ]
+          },
+          "type": "cancel"
+        },
+        "status": "ok"
+      },
+      "reconciliation": {
+        "all_terminal": true,
+        "complete": true,
+        "observed_ms": 1794393356001,
+        "orders": [
+          {
+            "cloid": "0xef7a21b8022a1b523a45746719ac2cc7",
+            "fees": "0.001574",
+            "filled": "0.00014",
+            "fills_reconciled": true,
+            "oid": 65074966774,
+            "original": "0.00014",
+            "remaining": "0.0",
+            "status": "filled"
+          }
+        ],
+        "safe_for_entry": true
+      }
+    },
+    {
+      "command_id": "acceptance-resting-next-01",
+      "intent": {
+        "kind": "close",
+        "limit": "75000",
+        "symbol": "BTC"
+      },
+      "state": "acknowledged",
+      "response": {
+        "response": {
+          "data": {
+            "statuses": [
+              {
+                "resting": {
+                  "cloid": "0xef7a21b8022a1b523a45746719ac2cc7",
+                  "oid": 65074966774
+                }
+              }
+            ]
+          },
+          "type": "order"
+        },
+        "status": "ok"
+      },
+      "reconciliation": {
+        "all_terminal": true,
+        "complete": true,
+        "observed_ms": 1794393356000,
+        "orders": [
+          {
+            "cloid": "0xef7a21b8022a1b523a45746719ac2cc7",
+            "fees": "0.001574",
+            "filled": "0.00014",
+            "fills_reconciled": true,
+            "oid": 65074966774,
+            "original": "0.00014",
+            "remaining": "0.0",
+            "status": "filled"
+          }
+        ],
+        "safe_for_entry": true
+      }
+    },
+    {
+      "command_id": "acceptance-entry-next-01",
+      "intent": {
+        "buy": true,
+        "kind": "entry",
+        "limit": "74696",
+        "quantity": "0.00015",
+        "stop": "73949",
+        "symbol": "BTC",
+        "take_profit": "76189"
+      },
+      "state": "acknowledged",
+      "response": {
+        "response": {
+          "data": {
+            "statuses": [
+              {
+                "filled": {
+                  "avgPx": "74694.0",
+                  "cloid": "0x448c4357a5d404b47c05c06c330fd75f",
+                  "oid": 65074931725,
+                  "totalSz": "0.00014"
+                }
+              },
+              "waitingForTrigger",
+              "waitingForTrigger"
+            ]
+          },
+          "type": "order"
+        },
+        "status": "ok"
+      },
+      "reconciliation": {
+        "all_terminal": true,
+        "complete": true,
+        "observed_ms": 1794393355998,
+        "orders": [
+          {
+            "cloid": "0x448c4357a5d404b47c05c06c330fd75f",
+            "fees": "0.004705",
+            "filled": "0.00014",
+            "fills_reconciled": true,
+            "oid": 65074931725,
+            "original": "0.00015",
+            "remaining": "0.00001",
+            "status": "filled"
+          },
+          {
+            "cloid": "0x17d08ce09045959073c81d80e8fc8324",
+            "fees": "0",
+            "filled": "0",
+            "fills_reconciled": true,
+            "oid": 65074931726,
+            "original": "0.00015",
+            "remaining": "0.00015",
+            "status": "reduceOnlyCanceled"
+          },
+          {
+            "cloid": "0xad3d35422950b5650d2e29dbffd44dda",
+            "fees": "0",
+            "filled": "0",
+            "fills_reconciled": true,
+            "oid": 65074931727,
+            "original": "0.00015",
+            "remaining": "0.00015",
+            "status": "reduceOnlyCanceled"
+          }
+        ],
+        "safe_for_entry": true
+      }
+    }
+  ]
+}
