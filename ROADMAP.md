@@ -97,3 +97,14 @@ Flujo offline completado con respuestas importadas, revisión interactiva y expo
 sin despliegue. Proveedor LLM no conectado; integración de un modelo concreto pendiente
 de selección/configuración. Las revisiones son artefactos locales, no autenticación
 multiusuario. Ver `ADVISOR.md`.
+
+## Fase 10 — ciclo autónomo testnet previo a LIVE
+
+- [x] 10A: observador BTC/EMA con velas testnet, sesiones acotadas, persistencia,
+  pausa y recuperación del plazo tras reiniciar. Lectura externa validada.
+- [ ] 10B: conectar señal reciente con riesgo y ejecución; máximo una entrada
+  por sesión, deduplicación durable y comprobación de apalancamiento 1x.
+- [ ] 10C: monitor continuo de pérdidas/protecciones y ensayo automático
+  completo con recuperación.
+
+El observador no ejecuta órdenes. LIVE continúa bloqueado. Ver `TESTNET.md`.

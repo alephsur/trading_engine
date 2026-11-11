@@ -1,0 +1,8 @@
+{
+  "symbol": "BTC",
+  "interval": "1m",
+  "strategy": "ema_trend_v1",
+  "duration_seconds": 900,
+  "poll_seconds": 30,
+  "max_entries": 1
+}

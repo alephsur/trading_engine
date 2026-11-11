@@ -3,6 +3,7 @@ use trading_testnet::{
     client::Client,
     executor,
     model::Intent,
+    observer,
     signing::{self, TestnetSigner},
 };
 use zeroize::Zeroizing;
@@ -21,7 +22,7 @@ async fn run() -> Result<()> {
     let args: Vec<_> = std::env::args().skip(1).collect();
     ensure!(
         !args.is_empty(),
-        "usage: trading-testnet markets | plan SYMBOL buy|sell | reconcile | watch | check ID intent.json | submit ID intent.json"
+        "usage: trading-testnet markets | plan SYMBOL buy|sell | reconcile | watch | check ID intent.json | submit ID intent.json | observe-once ID config.json | observe-run ID config.json | observe-status ID | observe-pause ID"
     );
     let client = Client::new()?;
     if args == ["markets"] {
@@ -58,6 +59,33 @@ async fn run() -> Result<()> {
         return Ok(());
     }
     let pool = trading_storage::connect(&std::env::var("DATABASE_URL")?).await?;
+    if args.len() == 2 && matches!(args[0].as_str(), "observe-status" | "observe-pause") {
+        if args[0] == "observe-pause" {
+            observer::pause(&pool, &account, &args[1]).await?;
+        }
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&observer::status(&pool, &account, &args[1]).await?)?
+        );
+        return Ok(());
+    }
+    if args.len() == 3 && matches!(args[0].as_str(), "observe-once" | "observe-run") {
+        let bytes = std::fs::read(&args[2])?;
+        ensure!(bytes.len() <= 4096, "observer configuration too large");
+        let config: observer::Config = serde_json::from_slice(&bytes)?;
+        loop {
+            // Any invalid data or persistence failure stops this process, without orders.
+            let result = observer::tick(&client, &pool, &account, &args[1], &config).await?;
+            println!("{}", serde_json::to_string_pretty(&result)?);
+            if args[0] == "observe-once" || result["paused"] == true || result["expired"] == true {
+                return Ok(());
+            }
+            tokio::select! {
+                _ = tokio::signal::ctrl_c() => return Ok(()),
+                _ = tokio::time::sleep(std::time::Duration::from_secs(config.poll_seconds)) => {}
+            }
+        }
+    }
     if args == ["reconcile"] || args == ["watch"] {
         loop {
             match executor::reconcile(&client, &pool, &account).await {

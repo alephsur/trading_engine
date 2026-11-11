@@ -220,3 +220,40 @@ duplicados y divergencias de posición. No representan fills auténticos de test
 - [Límites](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/rate-limits-and-user-limits).
 - [hypersdk](https://github.com/infinitefield/hypersdk) y
   [firma Python oficial](https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/master/hyperliquid/utils/signing.py).
+
+## Observador automático BTC/EMA — fase 10A
+
+El observador consulta exclusivamente velas de **testnet**, evalúa EMA 20/50
+sobre 100 velas cerradas de un minuto y persiste la decisión. No carga la clave,
+no firma, no envía órdenes y no consume señales del servidor PAPER.
+
+```sh
+cargo run --locked -p trading-testnet -- observe-once btc-ema-001 config/testnet-observer.json
+cargo run --locked -p trading-testnet -- observe-run btc-ema-001 config/testnet-observer.json
+cargo run --locked -p trading-testnet -- observe-status btc-ema-001
+cargo run --locked -p trading-testnet -- observe-pause btc-ema-001
+```
+
+La configuración incluida dura 15 minutos y consulta cada 30 segundos. El plazo
+empieza con la primera consulta, también con `observe-once`. Reutilizar el ID
+conserva plazo, configuración y pausa incluso tras reiniciar; para otra sesión
+se necesita otro ID. La pausa es permanente para ese ID. Ctrl+C detiene el proceso,
+pero no persiste una pausa. No se instala ningún servicio en segundo plano.
+
+Se rechazan huecos, duplicados, mercados incorrectos, ventanas antiguas y cambios
+en una evaluación ya guardada para la misma vela. Las velas en formación quedan
+fuera del cálculo y hay dos segundos de margen tras el cierre. Un error detiene
+el proceso; `observe-status` muestra la última evaluación correcta, cuya fecha
+debe consultarse para no confundirla con una lectura actual. La expiración impide
+guardar nuevas observaciones, incluso si ocurre durante una petición.
+
+`max_entries: 1` registra la preferencia acordada para el futuro ejecutor;
+**este observador permite cero entradas**. No es una aprobación de ejecución
+ni un monitor de posiciones, pérdidas, financiación o protecciones. La siguiente
+fase debe conectar riesgo, reconciliación, deduplicación de órdenes y límite
+de una entrada antes de habilitar un ensayo automático. BTC deberá estar a 1x
+en la cuenta testnet; no se requieren credenciales de mainnet.
+
+Validación real del 11-11-2026: lectura y persistencia de 100 velas cerradas,
+EMA `hold/no_ema_cross`, sin firma ni envío. Las pruebas con velas sintéticas
+se mantienen separadas de esta comprobación externa.

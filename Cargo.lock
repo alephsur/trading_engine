@@ -6132,6 +6132,7 @@ dependencies = [
  "tokio",
  "trading-domain",
  "trading-paper",
+ "trading-quant",
  "trading-storage",
  "zeroize",
 ]
