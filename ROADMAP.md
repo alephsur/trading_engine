@@ -78,10 +78,13 @@ El planificador adapta tamaño/profundidad sin relajar los límites de entrada.
 
 ## Fase 8 — preparar LIVE sin activarlo
 
-- [ ] Adaptador separado, secretos protegidos y doble bloqueo de activación.
-- [ ] Runbook operativo, reconciliación y pruebas de denegación por defecto.
+- [x] Frontera LIVE separada, sin carga de secretos y con configuración/confirmación independientes.
+- [x] Runbook operativo, auditoría de reconciliación importada y pruebas de denegación por defecto.
 
 Aceptación: LIVE permanece desactivado; activación requiere autorización explícita.
+Preparación completada: `trading-live` audita snapshots offline; esta compilación
+carece de firmante/transporte de producción y bloquea submit/cancel incondicionalmente.
+No se presenta como integración mainnet ejecutable. Ver `LIVE.md`.
 
 ## Fase 9 — IA supervisada
 

@@ -1,0 +1,6 @@
+{
+  "activation": {"enabled": false, "manual_confirmation": null},
+  "expected_positions": [],
+  "expected_open_order_ids": [],
+  "snapshot": {"observed_ms": 0, "positions": [], "orders": []}
+}

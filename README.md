@@ -140,3 +140,9 @@ dashboard permanecen PAPER. Configuración, límites y procedimiento en
 [TESTNET.md](TESTNET.md). La validación firmada de entrada, cancelación y cierre
 contra testnet se completó; evidencia en
 [registro de aceptación](docs/testnet-acceptance-2026-11-11.json). LIVE sigue desactivado.
+
+## Preparación LIVE
+
+`cargo run --locked -p trading-live -- status` confirma el bloqueo de producción.
+La auditoría offline y el runbook están en [LIVE.md](LIVE.md). No carga claves ni
+envía órdenes mainnet; PAPER y testnet conservan sus fronteras independientes.

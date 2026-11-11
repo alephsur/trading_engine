@@ -6018,6 +6018,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "trading-live"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "rust_decimal",
+ "serde",
+ "serde_json",
+ "trading-domain",
+]
+
+[[package]]
 name = "trading-market-data"
 version = "0.1.0"
 dependencies = [

@@ -1,3 +1,15 @@
+# Verificación — fase 8
+
+- Cuatro pruebas del módulo LIVE aprobadas: combinaciones de los dos controles,
+  bloqueo incondicional, discrepancias, stops, apalancamiento, duplicados y tiempo.
+- Prueba del binario con variables LIVE activadas: submit/cancel fallan antes de
+  abrir un archivo de orden o clave. No hay dependencias de red/firma en el módulo.
+- Formato, Clippy y evaluación CLI de ejemplo aprobados. El informe distingue
+  evidencia importada de una consulta autenticada al exchange.
+- Ninguna clave ni orden de producción utilizada. CI de publicación pendiente.
+
+---
+
 # Verificación — fase 7 (aceptación externa completada)
 
 ## Resultado local
