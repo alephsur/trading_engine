@@ -5992,6 +5992,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "trading-advisor"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "rust_decimal",
+ "serde",
+ "serde_json",
+ "trading-backtest",
+ "trading-domain",
+ "trading-quant",
+]
+
+[[package]]
 name = "trading-backtest"
 version = "0.1.0"
 dependencies = [

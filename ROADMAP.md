@@ -88,8 +88,12 @@ No se presenta como integración mainnet ejecutable. Ver `LIVE.md`.
 
 ## Fase 9 — IA supervisada
 
-- [ ] Interfaces para contexto, explicación y análisis posterior.
-- [ ] Versionar propuestas y validarlas mediante backtesting y aprobación.
-- [ ] Tests que impidan acceso de IA a límites de riesgo y ejecución.
+- [x] Interfaces para contexto, explicación y análisis posterior.
+- [x] Versionar propuestas y validarlas mediante backtesting y aprobación.
+- [x] Tests que impidan introducir riesgo, ejecución o aprobación en respuestas de análisis.
 
 Aceptación: IA solo asesora; toda modificación de estrategia pasa pruebas y aprobación.
+Flujo offline completado con respuestas importadas, revisión interactiva y exportación
+sin despliegue. Proveedor LLM no conectado; integración de un modelo concreto pendiente
+de selección/configuración. Las revisiones son artefactos locales, no autenticación
+multiusuario. Ver `ADVISOR.md`.

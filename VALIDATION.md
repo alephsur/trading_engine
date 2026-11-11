@@ -1,3 +1,21 @@
+# Verificación — fase 9
+
+- 69 pruebas Rust aprobadas en el workspace: 61 sin PostgreSQL y 8 con PostgreSQL.
+- Cuatro nuevas pruebas de frontera: contexto futuro, huellas alteradas, parámetros
+  inválidos, instrucciones tratadas como datos, campos riesgo/órdenes/aprobación
+  rechazados y aprobación CLI denegada sin terminal interactiva.
+- Smoke CLI completo con dataset sintético: backtesting real, riesgo del operador
+  preservado, muestra mínima en holdouts, evidencia insuficiente bloqueada, rechazo
+  de revisión ajena, exportación con recibo sintético y rechazo al cambiar experimento.
+- La prueba cubre contexto que invade holdout y conservación de archivos existentes.
+  El recibo de prueba no es una aprobación humana ni desplegó configuración alguna.
+- Formato/Clippy aprobados. Ejemplos de prompt/ingesta ejecutados. No se llamó a
+  ningún proveedor LLM ni se modificó una estrategia del servidor o cuenta remota.
+- CI de publicación pendiente. El proveedor LLM sigue sin configurar; solo existe
+  el contrato Advisor y la implementación de respuestas importadas.
+
+---
+
 # Verificación — fase 8
 
 - Cuatro pruebas del módulo LIVE aprobadas: combinaciones de los dos controles,

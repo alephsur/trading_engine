@@ -1,8 +1,8 @@
-# Arquitectura — fases 1–8
+# Arquitectura — fases 1–9
 
 ## Componentes ejecutables
 
-Workspace Rust con nueve crates:
+Workspace Rust con diez crates:
 
 - `trading-domain`: universo permitido y validación de metadatos, mids, OHLCV,
   operaciones y snapshots de libro. Precios/cantidades `rust_decimal`, strings JSON.
@@ -16,6 +16,9 @@ Workspace Rust con nueve crates:
 - `trading-testnet`: CLI de integración aislado, firma SDK, nonces persistentes y reconciliación.
 - `trading-live`: auditoría offline de preparación y frontera de ejecución denegada;
   sin transporte, firmante, secretos ni enlace desde PAPER. Ver `LIVE.md`.
+- `trading-advisor`: propuestas con contexto versionado, backtesting offline y revisión
+  manual vinculada a evidencia. Exporta parámetros a archivo nuevo; no modifica el
+  servidor. Proveedor de respuestas importadas, sin LLM conectado. Ver `ADVISOR.md`.
 
 El adaptador descubre de nuevo los índices de BTC, ETH, SOL y HYPE en cada conexión.
 Ausencia, duplicados o mercados retirados impiden preparar el feed. El servidor PAPER no carga

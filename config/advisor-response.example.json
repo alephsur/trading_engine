@@ -1,0 +1,10 @@
+{
+  "context_hash": "12bf23c11534639601e215fa363cd31d8cb5a79ca76ad211052c17fd2d9ed957",
+  "model": "UNCONFIGURED_EXAMPLE_NOT_LLM_OUTPUT",
+  "prompt_version": "advisory-v1",
+  "regime": "unknown",
+  "summary": "Ejemplo de formato, sin inferencia de modelo ni recomendación.",
+  "signal_explanation": "",
+  "post_trade_analysis": "",
+  "proposed_strategy": null
+}

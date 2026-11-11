@@ -1,0 +1,11 @@
+{
+  "as_of_ms": 5999999,
+  "symbol": "BTC",
+  "observations": [
+    {
+      "source": "SYNTHETIC_EXAMPLE_NOT_MARKET_DATA",
+      "available_at_ms": 5999998,
+      "text": "Ejemplo de contexto para probar el formato. No contiene señales, noticias ni resultados reales."
+    }
+  ]
+}

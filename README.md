@@ -146,3 +146,10 @@ contra testnet se completó; evidencia en
 `cargo run --locked -p trading-live -- status` confirma el bloqueo de producción.
 La auditoría offline y el runbook están en [LIVE.md](LIVE.md). No carga claves ni
 envía órdenes mainnet; PAPER y testnet conservan sus fronteras independientes.
+
+## Análisis supervisado
+
+`trading-advisor` registra respuestas de análisis importadas, ejecuta backtesting
+y vincula la exportación de parámetros a una revisión manual. No modifica riesgo,
+no despliega estrategias y no envía órdenes. No hay proveedor LLM conectado.
+Flujo, ejemplos y límites de confianza en [ADVISOR.md](ADVISOR.md).

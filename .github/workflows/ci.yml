@@ -29,6 +29,7 @@ jobs:
       - run: cargo test --workspace --locked
       - run: cargo test --workspace --locked -- --ignored
       - run: python3 scripts/backtest_smoke.py
+      - run: python3 scripts/advisor_smoke.py
       - run: python3 scripts/testnet_public_smoke.py
       - uses: actions/setup-node@v4
         with:
