@@ -46,7 +46,11 @@ Cambio de código: el planificador adapta cantidad al 10% de profundidad y recor
 niveles cercanos conservando todas las validaciones de entrada. Siete pruebas de
 modelo/firma y dos PostgreSQL aprobadas, además de formato y Clippy. La regresión
 cubre ambos lados, reducción de tamaño, mínimo negociable, niveles demasiado
-lejanos y datos obsoletos. CI de esta publicación pendiente.
+lejanos y datos obsoletos.
+
+[CI 43005110185](https://github.com/alephsur/trading_engine/actions/runs/43005110185)
+aprobado para `8fb9304`: formato, Clippy, todas las pruebas Rust/PostgreSQL,
+backtesting, lectura pública testnet, dashboard/navegador, Docker y recuperación.
 
 GitHub Actions del commit `6b4786b`: aprobado, incluida construcción/arranque
 Docker, dashboard contra el servicio real y recuperación tras reinicios.
