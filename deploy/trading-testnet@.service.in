@@ -1,0 +1,23 @@
+[Unit]
+Description=Bounded trading TESTNET session %i
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+WorkingDirectory=@PROJECT@
+ExecStart=@BINARY@ auto-run %i config/testnet-confirmed-breakout.json
+Environment=TESTNET_CONFIRM=TESTNET_ONLY
+Environment=TESTNET_AUTO_CONFIRM=CONFIRMED_BREAKOUT_ONE_ENTRY
+Restart=on-failure
+RestartSec=30
+TimeoutStopSec=120
+KillSignal=SIGTERM
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

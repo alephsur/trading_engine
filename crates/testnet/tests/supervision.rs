@@ -321,9 +321,20 @@ async fn monitor_latches_daily_loss_preserves_funding_and_blocks_stale_dispatch(
         true
     );
     exchange.unavailable.store(false, Ordering::SeqCst);
+    let failure = supervision::status(&pool, ACCOUNT).await.unwrap()["last_failure"].clone();
+    assert_eq!(failure["details"]["diagnostic"]["stage"], "funding");
+    assert_eq!(
+        failure["details"]["diagnostic"]["category"],
+        "validation_or_internal_error"
+    );
+    assert!(!failure.to_string().contains("injected network failure"));
     let time = now_ms();
     exchange.data.lock().unwrap()["funding"] = json!([{"time":time,"hash":"fixture","delta":{"type":"funding","coin":"BTC","usdc":"-0.01"}}]);
     supervision::tick(&exchange, &pool, ACCOUNT).await.unwrap();
+    assert_eq!(
+        supervision::status(&pool, ACCOUNT).await.unwrap()["last_failure"],
+        failure
+    );
     let count: i64 = sqlx::query_scalar("SELECT count(*) FROM testnet_funding")
         .fetch_one(&pool)
         .await
@@ -379,6 +390,22 @@ async fn paused_expired_session_keeps_monitoring_accepted_protections() {
         true
     );
     assert_eq!(result["supervision"]["assessment"]["safe_to_stop"], false);
+    let evidence: Value = sqlx::query_scalar("SELECT payload FROM testnet_events WHERE kind='protection_observed' ORDER BY id DESC LIMIT 1")
+        .fetch_one(&pool).await.unwrap();
+    assert_eq!(
+        evidence["assessment"]["positions"][0]["stop_confirmed"],
+        true
+    );
+    assert_eq!(
+        evidence["assessment"]["positions"][0]["target_confirmed"],
+        true
+    );
+    assert!(
+        !evidence["frontend_open_orders"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
     assert_eq!(exchange.entry_calls.load(Ordering::SeqCst), 1);
     assert_eq!(exchange.close_calls.load(Ordering::SeqCst), 0);
     // Direction, quantity, type and price must all match the accepted, owned stop.

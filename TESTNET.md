@@ -410,8 +410,8 @@ intento o ampliar el plazo. El primer ciclo vuelve a reconciliar con el exchange
 antes de evaluar entradas. Una parada ordenada mantiene la pausa al reiniciar.
 SIGKILL, apagado o pérdida de DB pueden impedir persistirla; en ese caso el control
 de supervisión caduca a los 60 segundos y la reserva durable sigue evitando reenvíos.
-No se ha instalado un servicio de reinicio automático ni protección frente a la
-suspensión del ordenador.
+El servicio de usuario descrito más abajo permite recuperar el mismo proceso
+tras fallos. No protege frente a suspensión, apagado o indisponibilidad de PostgreSQL.
 
 Reinicio externo verificado el 11/11/2026 con cuenta plana: la sesión conservó
 su configuración, plazo e intento disponible, y completó una nueva reconciliación.
@@ -451,3 +451,45 @@ El plazo original para entradas termina el 12-11-2026 a las 16:20:38 UTC
 (17:20:38 en Madrid). No se prolonga automáticamente si no aparece señal.
 El proceso sigue sujeto a la disponibilidad del ordenador y de PostgreSQL.
 Evidencia: `docs/phase10c-recovery-2026-11-12.json`.
+
+### Diagnóstico persistente y servicio de usuario
+
+Los errores del supervisor conservan etapa, categoría y, cuando existe, código
+HTTP. Se distinguen timeout, conexión, transporte, respuesta incompleta, JSON
+inválido, base de datos y determinadas validaciones. Nunca se registran cuerpos
+de respuesta, claves ni mensajes arbitrarios. `supervise-status` y `auto-status`
+incluyen `last_failure`, incluso después de un ciclo correcto. Mientras hay una
+posición, `protection_observed` conserva la evaluación y las órdenes de protección
+observadas; también registra la transición a cuenta plana. Esto permite auditar
+la protección después del cierre, sin confundir ACK con protección verificada.
+La pausa de entradas
+sigue siendo permanente para la sesión; no se relaja por recuperar conectividad.
+
+`python3 scripts/install_testnet_service.py` instala y valida la plantilla systemd
+de usuario, sin iniciar sesiones. Requiere compilar previamente el binario y
+conservar este checkout y `.env.testnet`. Para un ID aprobado y un ensayo nuevo:
+
+```sh
+systemctl --user enable --now trading-testnet@ID.service
+systemctl --user status trading-testnet@ID.service
+journalctl --user -u trading-testnet@ID.service --no-pager -n 100
+```
+
+El servicio usa el perfil BTC de 24 horas y un intento máximo de 20 USDC de
+notional planificado. Reinicia tras una salida anómala con el mismo ID, presupuesto
+y vencimiento; hasta cinco inicios en cinco minutos, con 30 segundos entre intentos.
+Una sesión pausada o vencida termina normalmente al confirmar cuenta plana,
+sin órdenes y sin solicitudes pendientes, y no se reinicia automáticamente.
+Nunca cambia el ID ni desbloquea entradas para recuperar un intento.
+
+`systemctl --user stop trading-testnet@ID.service` solicita parada ordenada,
+con hasta 120 segundos para finalizar el ciclo; persiste pausa pero no cierra por
+sí mismo posiciones ni retira protecciones. Una caída forzada puede impedir esa
+persistencia: la reserva de órdenes y el control de frescura siguen vigentes.
+No detenerlo con posición abierta sin un plan de supervisión alternativo.
+
+Con `loginctl enable-linger "$USER"` los servicios de usuario pueden mantenerse
+al cerrar sesión y arrancar al iniciar el equipo. PostgreSQL y la red deben estar
+disponibles; el servicio no inicia Docker ni evita la suspensión. El proceso PAPER
+actual conserva su arranque independiente. Los avisos quedan en el journal y en
+la base, sin notificaciones externas configuradas.

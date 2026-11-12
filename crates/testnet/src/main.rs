@@ -84,8 +84,11 @@ async fn run() -> Result<()> {
             match supervision::tick(&client, &pool, &account).await {
                 Ok(value) => println!("{}", serde_json::to_string_pretty(&value["assessment"])?),
                 Err(error) if args == ["supervise-once"] => return Err(error),
-                Err(_) => {
-                    eprintln!("testnet supervisor unavailable; new entries blocked; retrying reads")
+                Err(error) => {
+                    eprintln!(
+                        "testnet supervisor unavailable; new entries blocked; retrying reads: {}",
+                        trading_testnet::diagnostics::describe(&error)
+                    )
                 }
             }
             if shutdown.requested() {
@@ -156,11 +159,17 @@ async fn run() -> Result<()> {
                     // Never resume automatic entries after an operational error without a new session.
                     let _ = observer::pause(&pool, &account, &args[1]).await;
                     if supervised {
-                        let _ =
-                            supervision::failed(&pool, &account, "automatic_cycle_failed").await;
+                        let _ = supervision::failed_with_error(
+                            &pool,
+                            &account,
+                            "automatic_cycle_failed",
+                            &error,
+                        )
+                        .await;
                         if args[0] == "auto-run" {
                             eprintln!(
-                                "automatic testnet paused after an error; continuing position supervision"
+                                "automatic testnet paused; continuing position supervision: {}",
+                                trading_testnet::diagnostics::describe(&error)
                             );
                             tokio::select! {
                                 _ = shutdown.wait() => {

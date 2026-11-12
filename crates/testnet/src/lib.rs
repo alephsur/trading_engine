@@ -1,6 +1,7 @@
 //! Opt-in testnet integration. The PAPER server never links or invokes this crate.
 pub mod automation;
 pub mod client;
+pub mod diagnostics;
 pub mod executor;
 pub mod model;
 pub mod observer;

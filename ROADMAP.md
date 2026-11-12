@@ -108,6 +108,8 @@ multiusuario. Ver `ADVISOR.md`.
   perfil ruptura 1h y recuperación contrastada con exchange simulado y PostgreSQL.
 - [x] Recuperación operativa: arranque único por cuenta, detección de pérdida
   de propiedad del supervisor y parada ordenada con Ctrl+C/SIGTERM.
+- [x] Diagnóstico persistente de fallos, evidencia de protección y servicio de usuario
+  que recupera la misma sesión sin ampliar plazo ni presupuesto.
 - [ ] 10C (aceptación externa): señal natural de ruptura 1h, entrada automática,
   protección y salida reconciliadas en testnet. Mantener separada esta evidencia
   de las pruebas sintéticas y de la rentabilidad prospectiva PAPER.

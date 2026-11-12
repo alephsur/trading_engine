@@ -6,7 +6,7 @@ use crate::{
     signing::TestnetSigner,
     store,
 };
-use anyhow::{Result, ensure};
+use anyhow::{Context, Result, ensure};
 use rust_decimal::Decimal as D;
 use serde_json::{Value, json};
 use sqlx::{PgPool, Row};
@@ -27,15 +27,41 @@ pub async fn status(pool: &PgPool, account: &str) -> Result<Value> {
         .bind(account).fetch_one(pool).await?;
     let observed: i64 = row.get("observed_ms");
     let stale = !(0..HEARTBEAT_MS).contains(&(now_ms() - observed));
+    let last_failure: Option<Value> = sqlx::query_scalar("SELECT jsonb_build_object('observed_ms',observed_ms,'details',payload) FROM testnet_events WHERE account=$1 AND kind='monitor_unavailable' ORDER BY id DESC LIMIT 1")
+        .bind(account).fetch_optional(pool).await?;
     Ok(
         json!({"network":"TESTNET","observed_ms":observed,"stale":stale,
         "entries_blocked":stale || row.get::<bool,_>("blocked"),
-        "funding_through_ms":row.get::<i64,_>("funding_through_ms"),"assessment":row.get::<Value,_>("payload")}),
+        "funding_through_ms":row.get::<i64,_>("funding_through_ms"),"assessment":row.get::<Value,_>("payload"),"last_failure":last_failure}),
     )
 }
 
 /// No secrets or arbitrary exchange error bodies are persisted in alerts.
 pub async fn failed(pool: &PgPool, account: &str, reason: &str) -> Result<()> {
+    failure(pool, account, reason, None).await
+}
+
+pub async fn failed_with_error(
+    pool: &PgPool,
+    account: &str,
+    reason: &str,
+    error: &anyhow::Error,
+) -> Result<()> {
+    failure(
+        pool,
+        account,
+        reason,
+        Some(crate::diagnostics::describe(error)),
+    )
+    .await
+}
+
+async fn failure(
+    pool: &PgPool,
+    account: &str,
+    reason: &str,
+    diagnostic: Option<Value>,
+) -> Result<()> {
     let mut tx = pool.begin().await?;
     sqlx::query("SELECT pg_advisory_xact_lock(hashtextextended($1,701))")
         .bind(account)
@@ -43,7 +69,7 @@ pub async fn failed(pool: &PgPool, account: &str, reason: &str) -> Result<()> {
         .await?;
     sqlx::query("UPDATE testnet_supervision SET blocked=true,payload=$2 WHERE account=$1")
         .bind(account)
-        .bind(json!({"blockers":[reason],"safe_to_stop":false}))
+        .bind(json!({"blockers":[reason],"safe_to_stop":false,"diagnostic":diagnostic}))
         .execute(&mut *tx)
         .await?;
     sqlx::query("UPDATE testnet_observer_sessions SET paused=true WHERE account=$1 AND NOT paused")
@@ -55,7 +81,7 @@ pub async fn failed(pool: &PgPool, account: &str, reason: &str) -> Result<()> {
         account,
         "supervision",
         "monitor_unavailable",
-        json!({"reason":reason}),
+        json!({"reason":reason,"diagnostic":diagnostic}),
     )
     .await?;
     tx.commit().await?;
@@ -242,8 +268,8 @@ pub fn assess(report: &Value, frontend: &Value, now: i64) -> Result<Value> {
 pub async fn tick<T: InfoTransport>(client: &T, pool: &PgPool, account: &str) -> Result<Value> {
     enable(pool, account).await?;
     let result = cycle(client, pool, account).await;
-    if result.is_err() {
-        let _ = failed(pool, account, "monitor_unavailable").await;
+    if let Err(error) = &result {
+        let _ = failed_with_error(pool, account, "monitor_unavailable", error).await;
     }
     result
 }
@@ -255,16 +281,19 @@ async fn cycle<T: InfoTransport>(client: &T, pool: &PgPool, account: &str) -> Re
             .fetch_one(pool)
             .await?;
     let funding_end = now_ms();
-    let funding = client.info(json!({"type":"userFunding","user":account,"startTime":from.saturating_sub(1),"endTime":funding_end})).await?;
+    let funding = client.info(json!({"type":"userFunding","user":account,"startTime":from.saturating_sub(1),"endTime":funding_end})).await.context("supervision.funding")?;
     ensure!(
         rows(&funding)?.len() < 500,
         "funding history truncated; entry gate remains blocked"
     );
-    let report = executor::reconcile(client, pool, account).await?;
+    let report = executor::reconcile(client, pool, account)
+        .await
+        .context("supervision.reconcile")?;
     let frontend = client
         .info(json!({"type":"frontendOpenOrders","user":account}))
-        .await?;
-    let mut assessment = assess(&report, &frontend, now_ms())?;
+        .await
+        .context("supervision.open_orders")?;
+    let mut assessment = assess(&report, &frontend, now_ms()).context("supervision.assess")?;
     let equity = decimal(&assessment["equity"])?;
     let observed = assessment["observed_ms"].as_i64().unwrap();
     let day = observed / 86_400_000;
@@ -352,6 +381,22 @@ async fn cycle<T: InfoTransport>(client: &T, pool: &PgPool, account: &str) -> Re
             "supervision",
             "supervision_changed",
             json!({"blockers":assessment["blockers"]}),
+        )
+        .await?;
+    }
+    // Keep external protection evidence after the position closes and current
+    // status becomes flat. This never contains signing payloads or credentials.
+    if !rows(&assessment["positions"])?.is_empty()
+        || prior.get::<Value, _>("payload")["positions"]
+            .as_array()
+            .is_some_and(|positions| !positions.is_empty())
+    {
+        store::event(
+            &mut tx,
+            account,
+            "supervision",
+            "protection_observed",
+            json!({"assessment":assessment,"frontend_open_orders":frontend}),
         )
         .await?;
     }

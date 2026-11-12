@@ -1,3 +1,4 @@
+use crate::diagnostics::ApiFailure;
 use anyhow::{Result, ensure};
 use serde_json::{Value, json};
 use std::time::Duration;
@@ -20,7 +21,7 @@ impl Client {
             next: Mutex::new(Instant::now()),
         })
     }
-    async fn post(&self, path: &str, payload: &Value) -> Result<Value> {
+    async fn post(&self, path: &'static str, payload: &Value) -> Result<Value> {
         let mut next = self.next.lock().await;
         tokio::time::sleep_until(*next).await;
         *next = Instant::now() + Duration::from_secs(2);
@@ -30,28 +31,53 @@ impl Client {
             .json(payload)
             .send()
             .await
-            .map_err(|_| anyhow::anyhow!("testnet transport outcome unknown"))?;
-        ensure!(
-            response.status().is_success(),
-            "testnet HTTP request unsuccessful; do not assume rejection"
-        );
+            .map_err(|e| ApiFailure {
+                operation: path,
+                category: if e.is_timeout() {
+                    "timeout"
+                } else if e.is_connect() {
+                    "connection"
+                } else {
+                    "transport"
+                },
+                status: None,
+            })?;
+        if !response.status().is_success() {
+            return Err(ApiFailure {
+                operation: path,
+                category: "http_status",
+                status: Some(response.status().as_u16()),
+            }
+            .into());
+        }
         ensure!(
             response.content_length().is_none_or(|n| n <= 8_000_000),
             "oversized exchange response"
         );
         let mut bytes = Vec::new();
-        while let Some(chunk) = response
-            .chunk()
-            .await
-            .map_err(|_| anyhow::anyhow!("incomplete testnet response"))?
-        {
+        while let Some(chunk) = response.chunk().await.map_err(|e| ApiFailure {
+            operation: path,
+            category: if e.is_timeout() {
+                "timeout"
+            } else {
+                "incomplete_response"
+            },
+            status: None,
+        })? {
             ensure!(
                 bytes.len() + chunk.len() <= 8_000_000,
                 "oversized exchange response"
             );
             bytes.extend_from_slice(&chunk);
         }
-        serde_json::from_slice(&bytes).map_err(|_| anyhow::anyhow!("invalid testnet response"))
+        serde_json::from_slice(&bytes).map_err(|_| {
+            ApiFailure {
+                operation: path,
+                category: "invalid_json",
+                status: None,
+            }
+            .into()
+        })
     }
     pub async fn info(&self, request: Value) -> Result<Value> {
         self.post("info", &request).await
