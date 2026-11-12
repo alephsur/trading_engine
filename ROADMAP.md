@@ -114,8 +114,10 @@ multiusuario. Ver `ADVISOR.md`.
 
 El observador no ejecuta órdenes. LIVE continúa bloqueado. Ver `TESTNET.md`.
 
-Estado 12-11-2026: código y comprobaciones offline consolidados. La recuperación
-externa está bloqueada por PostgreSQL local no disponible; cuenta testnet sin
-posiciones ni órdenes en consulta directa. Recuperar el historial original antes
-de continuar 10C y medir la interrupción PAPER. Ver
-`docs/phase10c-status-2026-11-12.json`.
+Estado 12-11-2026: PostgreSQL recuperado y supervisor reanudado con la misma
+sesión, plazo y presupuesto; pendiente señal natural. PAPER recuperado en el
+puerto local 3001 tras corregir la selección del proveedor TLS del WebSocket.
+La interrupción desde el último tick hasta el reinicio fue de unas 17 h 47 min;
+no equivale a observación prospectiva continua. Ver
+`docs/phase10c-recovery-2026-11-12.json` (el estado anterior se conserva en
+`docs/phase10c-status-2026-11-12.json`).

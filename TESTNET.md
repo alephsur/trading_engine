@@ -441,3 +441,13 @@ y límites en [registro de supervisión](docs/testnet-supervision-acceptance-202
 Contratos revisados: [funding y estado de cuenta](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals),
 [órdenes abiertas](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint)
 y [comportamiento de TP/SL en fills parciales](https://hyperliquid.gitbook.io/hyperliquid-docs/trading/take-profit-and-stop-loss-orders-tp-sl).
+
+### Recuperación del 12-11-2026
+
+Tras arrancar PostgreSQL se recuperó `breakout-btc-forward-20261111`, sin crear
+una sesión nueva, ampliar su plazo ni restablecer su presupuesto. El supervisor
+volvió a reconciliar sin bloqueos; no había posiciones ni órdenes abiertas.
+El plazo original para entradas termina el 12-11-2026 a las 16:20:38 UTC
+(17:20:38 en Madrid). No se prolonga automáticamente si no aparece señal.
+El proceso sigue sujeto a la disponibilidad del ordenador y de PostgreSQL.
+Evidencia: `docs/phase10c-recovery-2026-11-12.json`.

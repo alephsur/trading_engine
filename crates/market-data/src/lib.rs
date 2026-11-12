@@ -6,7 +6,7 @@ use tokio::{
     sync::mpsc,
     time::{interval, timeout},
 };
-use tokio_tungstenite::{connect_async, tungstenite::Message};
+use tokio_tungstenite::{Connector, connect_async_tls_with_config, tungstenite::Message};
 use trading_domain::{SYMBOLS, data::INTERVALS};
 
 const INFO: &str = "https://api.hyperliquid.xyz/info";
@@ -14,9 +14,26 @@ const WS: &str = "wss://api.hyperliquid.xyz/ws";
 
 pub mod history;
 
+fn tls_connector() -> Result<Connector> {
+    // Workspace feature unification can enable both ring and aws-lc-rs.
+    // Select this connection's provider explicitly without global process state.
+    let roots = rustls::RootCertStore::from_iter(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
+    let config = rustls::ClientConfig::builder_with_provider(
+        rustls::crypto::ring::default_provider().into(),
+    )
+    .with_safe_default_protocol_versions()?
+    .with_root_certificates(roots)
+    .with_no_client_auth();
+    Ok(Connector::Rustls(std::sync::Arc::new(config)))
+}
+
 /// One read-only session. The supervisor owns reconnects and health state.
 pub async fn stream(tx: mpsc::Sender<serde_json::Value>) -> Result<()> {
-    let (mut ws, _) = timeout(Duration::from_secs(10), connect_async(WS)).await??;
+    let (mut ws, _) = timeout(
+        Duration::from_secs(10),
+        connect_async_tls_with_config(WS, None, false, Some(tls_connector()?)),
+    )
+    .await??;
     for subscription in subscriptions() {
         timeout(
             Duration::from_secs(5),
@@ -62,6 +79,14 @@ pub fn subscriptions() -> Vec<serde_json::Value> {
 }
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn tls_configuration_does_not_need_an_implicit_crypto_provider() {
+        assert!(matches!(
+            super::tls_connector().unwrap(),
+            tokio_tungstenite::Connector::Rustls(_)
+        ));
+    }
+
     #[test]
     fn subscriptions_are_unique_and_public() {
         let subscriptions = super::subscriptions();

@@ -6048,10 +6048,12 @@ dependencies = [
  "anyhow",
  "futures-util",
  "reqwest 0.12.28",
+ "rustls",
  "serde_json",
  "tokio",
  "tokio-tungstenite",
  "trading-domain",
+ "webpki-roots 1.0.11",
 ]
 
 [[package]]

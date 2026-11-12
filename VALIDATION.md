@@ -1,3 +1,25 @@
+# Recuperación y corrección TLS — 12-11-2026
+
+PostgreSQL recuperado. Las 15 pruebas de integración pasan. Formato, clippy,
+tests de todos los targets y compilación conjunta del workspace pasan.
+Se corrigió un panic del WebSocket al activar simultáneamente ring y aws-lc-rs:
+el cliente ahora selecciona ring por conexión, con raíces públicas y validación
+TLS estándar, sin depender del proveedor global. Incluye prueba de regresión.
+
+El binario compilado conjuntamente arranca y pasa el smoke público completo:
+precios, libros, operaciones, 16 series cerradas, indicadores y cuenta PAPER.
+Salud lista en localhost:3001; el puerto 3000 pertenece a otro servicio.
+Los parámetros de estrategia y riesgo coinciden con el manifiesto original.
+Se recuperaron las velas; los libros y operaciones perdidos no se reconstruyen.
+La interrupción de PAPER hasta el reinicio fue de 64.041 segundos, aproximadamente
+17 h 47 min. El ensayo no constituye observación prospectiva continua de 30 días.
+
+Supervisor testnet recuperado con sesión, plazo y presupuesto originales,
+sin pausas ni bloqueos y sin entrada consumida al verificar. Continúa pendiente
+la aceptación externa de una entrada y salida naturales. Evidencia:
+`docs/phase10c-recovery-2026-11-12.json`. La validación de GitHub del commit
+anterior `7ef3f92` finalizó correctamente.
+
 # Verificación — consolidación fase 10C, 12-11-2026
 
 Formato, clippy de todos los targets y tests Rust de todos los targets aprobados.

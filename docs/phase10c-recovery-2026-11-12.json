@@ -1,0 +1,66 @@
+{
+  "checked_at_utc": "2026-11-12T11:05:54.708748+00:00",
+  "scope": "Recovery of original session and PAPER; natural automatic fill acceptance still pending",
+  "validation": {
+    "rust_all_targets": "passed",
+    "rust_integration_tests": 15,
+    "clippy": "passed",
+    "format": "passed",
+    "workspace_build": "passed",
+    "public_market_smoke": "passed",
+    "previous_commit_ci": "success"
+  },
+  "testnet": {
+    "session_id": "breakout-btc-forward-20261111",
+    "original_fields_preserved": true,
+    "expires_ms": 1794500438774,
+    "paused": false,
+    "expired": false,
+    "entry_budget_consumed": false,
+    "supervision": {
+      "assessment": {
+        "blockers": [],
+        "daily_initial_equity": "499.757821",
+        "daily_loss_latched": false,
+        "emergency_symbols": [],
+        "equity": "499.757821",
+        "observed_ms": 1794481534361,
+        "positions": [],
+        "reliable_for_close": true,
+        "safe_to_stop": true
+      },
+      "entries_blocked": false,
+      "funding_through_ms": 1794481514074,
+      "network": "TESTNET",
+      "observed_ms": 1794481534361,
+      "stale": false
+    }
+  },
+  "paper": {
+    "dashboard_url": "http://127.0.0.1:3001/dashboard/",
+    "health": {
+      "analysis_ready": true,
+      "database": true,
+      "execution_enabled": false,
+      "history_ready": true,
+      "market_data_fresh": true,
+      "mode": "PAPER",
+      "paper_execution_enabled": true,
+      "paper_ready": true,
+      "status": "ready"
+    },
+    "strategy_manifest_unchanged": true,
+    "risk_config_unchanged": true,
+    "last_tick_before_interruption_ms": 1794417411752,
+    "restart_at_utc": "2026-11-12T11:04:13.033217+00:00",
+    "interruption_to_restart_seconds": 64041.28121685982,
+    "candle_series": 16,
+    "missing_candles": 0,
+    "trade_history_complete": false,
+    "book_history_complete": false,
+    "account_reset": false,
+    "continuous_prospective_observation": false
+  },
+  "live_execution_enabled": false,
+  "external_automatic_fill_validated": false
+}
