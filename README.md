@@ -1,8 +1,10 @@
 # AI Trading Engine
 
-Fase 5 funcional en Rust: PostgreSQL, perpetuos BTC/ETH/SOL/HYPE, precios, libros,
+Motor en Rust con dashboard PAPER y ejecutor testnet aislado: PostgreSQL,
+perpetuos BTC/ETH/SOL/HYPE, precios, libros,
 operaciones y velas 1m/5m/15m/1h de Hyperliquid. Incluye recuperación histórica
-y API de salud. Añade indicadores y cuatro estrategias sobre cierres confirmados.
+y API de salud. Usa por defecto ruptura confirmada sobre cierres de una hora;
+conserva el perfil histórico de cuatro estrategias para reproducir experimentos.
 Simula órdenes y posiciones con controles de riesgo, costes y recuperación persistente.
 La ejecución real permanece desactivada. No necesita cuenta, wallet ni credenciales de Hyperliquid.
 
@@ -45,7 +47,7 @@ El binario lee variables de entorno; no carga `.env` automáticamente.
 | `DATABASE_URL` | Obligatoria | Conexión PostgreSQL; nunca se registra explícitamente |
 | `BIND_ADDR` | `127.0.0.1:3000` | Dirección de la API |
 | `TRADING_MODE` | `PAPER` | Único valor admitido en esta fase |
-| `STRATEGY_CONFIG_PATH` | Defaults integrados | Archivo JSON de parámetros, validado al arrancar |
+| `STRATEGY_CONFIG_PATH` | Ruptura confirmada 1h | Archivo JSON de estrategia, validado al arrancar |
 | `PAPER_CONFIG_PATH` | Defaults integrados | Riesgo/costes PAPER; debe coincidir con la cuenta persistida |
 | `RUST_LOG` | `info` | Nivel de logs JSON; `debug` muestra snapshots persistidos |
 
@@ -64,15 +66,18 @@ peticiones autenticadas. Los índices de activos se descubren al conectar.
 - `GET /trades?symbol=BTC&limit=100`: operaciones deduplicadas, con hora del exchange.
 - `GET /book?symbol=BTC`: último snapshot (hasta 20 niveles/lado) y frescura.
 - `GET /data-status`: cobertura de las 16 series y límites de completitud.
-- `GET /strategies`: manifiesto de las cuatro estrategias, identidad de configuración y cursores.
+- `GET /strategies`: manifiesto de la estrategia activa, identidad de configuración y cursores.
 - `GET /evaluations?symbol=BTC&interval=1m&limit=10`: indicadores, decisiones y motivos.
 - `GET /signals?symbol=BTC&interval=1m&limit=100`: propuestas long/short, con `analysis_only:true`.
 
 EMA, RSI, ATR, MACD y volumen se calculan con Decimal. Los parámetros de las
-estrategias están en [config/strategies.example.json](config/strategies.example.json).
+estrategia activa están en [config/strategies.confirmed-breakout.json](config/strategies.confirmed-breakout.json).
 Para usar un archivo aprobado localmente, exporta `STRATEGY_CONFIG_PATH` con su ruta
 antes de arrancar. En Docker debes montar el archivo y pasar esa variable al servicio.
-No se cambian parámetros desde la API. Ver [reglas y convenciones](STRATEGIES.md).
+No se cambian parámetros desde la API. Las señales nuevas solo se emiten en 1h;
+los otros intervalos siguen disponibles para consulta. El cambio conserva la cuenta,
+posiciones e historial previo con identidades de configuración separadas.
+Ver [reglas y convenciones](STRATEGIES.md).
 La ausencia de señales es un resultado válido; ninguna estrategia promete rentabilidad.
 
 Símbolos permitidos: BTC, ETH, SOL, HYPE. Intervalos: 1m, 5m, 15m, 1h. Límites: 1–500.

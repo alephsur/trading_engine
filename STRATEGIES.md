@@ -1,4 +1,41 @@
-# Indicadores y estrategias — fase 3
+# Indicadores y estrategias
+
+## Perfil PAPER activo: ruptura confirmada de una hora
+
+El servidor usa por defecto `confirmed_breakout_1h_v1`, aprobado el 11/11/2026,
+en BTC, ETH, SOL y HYPE. Solo registra esta estrategia. Las otras tres frecuencias
+siguen capturándose y muestran indicadores, pero devuelven `hold/unsupported_interval`.
+El dashboard abre inicialmente el intervalo 1h.
+
+Para una compra deben cumplirse **todas** estas condiciones en una vela cerrada:
+
+1. EMA20 > EMA50 y EMA50 actual > EMA50 de cinco velas atrás.
+2. Cierre estrictamente por encima del máximo de las 20 velas anteriores.
+3. Volumen ≥1,5 veces la media de las 20 velas anteriores, con media positiva.
+4. Cierre > apertura y situado en el 25 % superior de la vela.
+5. Rango máximo-mínimo ≤2,5 × ATR14, con ATR y rango positivos.
+
+Para vender, se invierten tendencia y ruptura: EMA20 < EMA50 descendente, cierre
+bajo el mínimo anterior, cierre < apertura y situado en el 25 % inferior.
+Volumen y límite de rango son los mismos. Canal y volumen medio excluyen la vela
+de señal; EMA y ATR la incluyen. Se recalcula todo sobre **exactamente 100 velas**.
+
+La señal se entrega a PAPER después de confirmar el cierre. La entrada depende
+del siguiente ciclo elegible y del libro disponible, de su frescura y del riesgo;
+no se garantiza el precio de apertura de la hora siguiente. Se conservan sizing,
+stops, objetivos, comisiones, funding y límites de `PAPER.md`, incluida la gestión
+de posiciones ya abiertas. Cambiar estrategia no reinicia la cuenta.
+
+Configuración reproducible: `config/strategies.confirmed-breakout.json`. El perfil
+congela los parámetros contrastados; un cambio en ventana, medias o breakout se
+rechaza. Los bloques momentum y mean_reversion se conservan por compatibilidad
+del formato, pero no están activos. No se incorporan los filtros adicionales
+descartados durante el análisis de cinco agentes.
+
+La simulación aproximada de 180 días obtuvo +3,91 % con spread supuesto de 5 bps
+y caída máxima del 2,84 %. Es evidencia histórica con ejecución OHLC aproximada,
+no rentabilidad realizada ni garantía futura. Los datos usados para elegir el
+patrón no constituyen una nueva prueba independiente de rentabilidad.
 
 ## Contrato de cálculo
 
@@ -15,8 +52,8 @@ oculto. **No equivale a una EMA calculada desde un histórico infinito**. El tam
 forma parte de la identidad de configuración. No se eligen parámetros usando los
 resultados futuros ni se optimizan automáticamente.
 
-Los cuatro activos se evalúan por separado en 1m, 5m, 15m y 1h. Esta fase no combina
-señales de distintos intervalos ni declara confirmación entre timeframes.
+Los cuatro activos se evalúan por separado. Se conservan evaluaciones de 1m, 5m,
+15m y 1h; el perfil activo solo genera señales en 1h. No se combinan intervalos.
 
 ## Indicadores
 
@@ -42,7 +79,7 @@ La instantánea común expone EMA20/50, RSI14, ATR14, MACD12/26/9 y volumen prev
 Cada estrategia usa además sus propios parámetros. Por ejemplo, cambiar EMA rápida
 no cambia el campo informativo `ema_20`: la configuración exacta queda en el manifiesto.
 
-## Reglas iniciales
+## Perfil histórico: cuatro estrategias
 
 | Estrategia | Candidato long | Candidato short | Filtros/parámetros por defecto |
 | --- | --- | --- | --- |
@@ -57,7 +94,11 @@ no una instrucción para añadir posiciones. No se supone rentabilidad de estas 
 
 ## Configuración y extensibilidad
 
-Valores iniciales en `config/strategies.example.json`, idénticos a los defaults.
+El servidor usa `Config::confirmed_breakout_1h()` si no se especifica archivo.
+`config/strategies.example.json` y `Config::default()` de la biblioteca conservan
+el perfil histórico para reproducir backtests y consumidores anteriores. Los JSON
+sin `profile` mantienen sus reglas, manifiesto e identidad originales. Elegir ese
+archivo explícitamente vuelve a activar las cuatro estrategias históricas.
 `STRATEGY_CONFIG_PATH` permite leer un JSON al arrancar; campos desconocidos,
 periodos inválidos o umbrales inconsistentes abortan el arranque. No hay endpoints
 para editar estrategias ni recarga dinámica. Los cambios deben pasar pruebas y

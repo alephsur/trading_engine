@@ -1,5 +1,5 @@
 use crate::{
-    client::Client,
+    client::{ExchangeTransport, InfoTransport},
     model::{self, Intent, decimal},
     signing::TestnetSigner,
     store,
@@ -11,8 +11,8 @@ use serde_json::{Value, json};
 use sqlx::PgPool;
 use trading_domain::data::{Book, now_ms};
 
-pub async fn preflight(
-    client: &Client,
+pub async fn preflight<T: InfoTransport>(
+    client: &T,
     pool: &PgPool,
     account: &str,
     id: &str,
@@ -104,8 +104,8 @@ pub async fn preflight(
     );
     Ok((action, state))
 }
-pub async fn submit(
-    client: &Client,
+pub async fn submit<T: InfoTransport + ExchangeTransport>(
+    client: &T,
     pool: &PgPool,
     signer: &TestnetSigner,
     account: &str,
@@ -253,6 +253,7 @@ pub async fn reconcile<T: crate::client::InfoTransport>(
             }
         }
     }
+    let observed_ms = now_ms();
     let state = client
         .info(json!({"type":"clearinghouseState","user":account}))
         .await?;
@@ -314,7 +315,7 @@ pub async fn reconcile<T: crate::client::InfoTransport>(
         }
         positions_match &= net == model::position(&state, symbol)?;
     }
-    let snapshot = json!({"observed_ms":now_ms(),"account_state":state,"open_orders":opens,"positions_reconciled":positions_match,"fill_response_truncated":false,"full_exchange_history_available":false});
+    let snapshot = json!({"observed_ms":observed_ms,"account_state":state,"open_orders":opens,"positions_reconciled":positions_match,"fill_response_truncated":false,"full_exchange_history_available":false});
     sqlx::query("INSERT INTO testnet_snapshots(account,observed_ms,payload) VALUES ($1,$2,$3)")
         .bind(account)
         .bind(now_ms())

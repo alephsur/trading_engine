@@ -87,6 +87,52 @@ fn signal_freshness_leverage_and_atr_protection() {
     assert!(automation::signal(&e, 0, now).is_err());
 }
 
+#[test]
+fn confirmed_breakout_plans_all_four_assets_with_the_existing_caps() {
+    let now = 12_005_000;
+    for symbol in trading_domain::SYMBOLS {
+        let mut e = evaluation(now);
+        e.symbol = symbol.into();
+        e.interval = "1h".into();
+        e.decisions[0].strategy = "confirmed_breakout_1h_v1".into();
+        let mut book = book(now);
+        book.coin = symbol.into();
+        automation::leverage_for(
+            &json!({"user":"account","coin":symbol,"leverage":{"type":"isolated","value":1}}),
+            "account",
+            symbol,
+        )
+        .unwrap();
+        for direction in [Direction::Long, Direction::Short] {
+            e.decisions[0].direction = direction;
+            let proposed = automation::plan(&e, &markets(), &book, &state(), 0, now).unwrap();
+            let Intent::Entry {
+                symbol: actual,
+                quantity,
+                limit,
+                ..
+            } = &proposed
+            else {
+                panic!("entry expected");
+            };
+            assert_eq!(actual, symbol);
+            assert!(*quantity * *limit <= dec("20"));
+            model::entry(
+                &proposed,
+                "account",
+                "test-confirmed",
+                &markets(),
+                &book,
+                &state(),
+                now,
+            )
+            .unwrap();
+        }
+        e.interval = "1m".into();
+        assert!(automation::signal(&e, 0, now).is_err());
+    }
+}
+
 #[tokio::test]
 #[ignore = "requires TEST_DATABASE_URL; synthetic signals and dummy signer; no network writes"]
 async fn single_attempt_survives_restart_and_pause_blocks_dispatch() {

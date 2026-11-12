@@ -1,0 +1,133 @@
+{
+  "purpose": "Prospective 30-day PAPER observation, parameters frozen at start; no profit guarantee",
+  "start_ms": 1794413712117,
+  "end_exclusive_ms": 1797005712117,
+  "start_utc": "2026-11-11T16:15:12.117000+00:00",
+  "end_exclusive_utc": "2026-12-11T16:15:12.117000+00:00",
+  "strategy_id": "4ca2bf8c79c86b9feca2ac31ee390633e0221a127b4ed2f8e15cc894c39f09ca",
+  "strategy_manifest": {
+    "algorithm": "quant-v1",
+    "config": {
+      "breakout": {
+        "lookback": 20,
+        "min_volume_multiple": "1.5",
+        "volume_period": 20
+      },
+      "ema": {
+        "fast": 20,
+        "slow": 50
+      },
+      "history_window": 100,
+      "mean_reversion": {
+        "atr_multiple": "2",
+        "atr_period": 14,
+        "ema_period": 20,
+        "overbought": "70",
+        "oversold": "30",
+        "rsi_period": 14
+      },
+      "momentum": {
+        "long_max": "70",
+        "long_min": "55",
+        "lookback": 5,
+        "min_change_bps": "10",
+        "rsi_period": 14,
+        "short_max": "45",
+        "short_min": "30"
+      },
+      "profile": "confirmed_breakout_1h_v1",
+      "version": "confirmed-breakout-1h-v1"
+    },
+    "strategies": [
+      {
+        "name": "confirmed_breakout_1h_v1",
+        "parameters": {
+          "atr_period": 14,
+          "channel_lookback": 20,
+          "ema_fast": 20,
+          "ema_slow": 50,
+          "history_window": 100,
+          "interval": "1h",
+          "long_close_location_min": "0.75",
+          "max_range_atr": "2.5",
+          "min_volume_multiple": "1.5",
+          "previous_volume_period": 20,
+          "short_close_location_max": "0.25",
+          "slope_lookback": 5
+        }
+      }
+    ]
+  },
+  "risk_config": {
+    "capital": "10000",
+    "correlated_exposure_fraction": "0.15",
+    "daily_loss_fraction": "0.01",
+    "exposure_fraction": "0.20",
+    "fee_bps": "4.5",
+    "leverage": "1",
+    "max_atr_fraction": "0.03",
+    "max_positions": 2,
+    "max_signal_age_ms": 120000,
+    "max_spread_bps": "20",
+    "participation": "0.10",
+    "reward_multiple": "2",
+    "risk_fraction": "0.0025",
+    "slippage_bps": "2",
+    "stop_atr": "2"
+  },
+  "account_state_at_start": {
+    "account": {
+      "activated_at": 1794410090414,
+      "blockers": [],
+      "cash": "10000",
+      "config": {
+        "capital": "10000",
+        "correlated_exposure_fraction": "0.15",
+        "daily_loss_fraction": "0.01",
+        "exposure_fraction": "0.20",
+        "fee_bps": "4.5",
+        "leverage": "1",
+        "max_atr_fraction": "0.03",
+        "max_positions": 2,
+        "max_signal_age_ms": 120000,
+        "max_spread_bps": "20",
+        "participation": "0.10",
+        "reward_multiple": "2",
+        "risk_fraction": "0.0025",
+        "slippage_bps": "2",
+        "stop_atr": "2"
+      },
+      "day": 20768,
+      "day_start_equity": "10000",
+      "entries_paused": false,
+      "equity": "10000",
+      "extreme_until": 0,
+      "funding_due": [],
+      "last_tick": 1794413712117,
+      "loss_latched": false,
+      "positions": [],
+      "previous_prices": {
+        "BTC": "74179.5",
+        "ETH": "2079.450",
+        "HYPE": "73.62750",
+        "SOL": "84.90450"
+      },
+      "sequence": 0,
+      "used_books": {}
+    },
+    "mode": "PAPER",
+    "real_execution_enabled": false
+  },
+  "account_reset": false,
+  "data_source": "Public mainnet books, confirmed candles and funding, captured by existing PAPER server",
+  "criteria_before_review": [
+    "Keep strategy and risk unchanged for the period; any change invalidates this comparison",
+    "Report net return and mark-to-market equity including open positions, fees and funding",
+    "Report trade count, drawdown, coverage gaps and rejected entries; do not remove losing days",
+    "Record execution reliability separately from economic performance",
+    "30 elapsed days alone do not establish profitability or authorize LIVE"
+  ],
+  "execution_mode": "PAPER",
+  "automatic_live_activation": false,
+  "automatic_notification_scheduled": false
+}

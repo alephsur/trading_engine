@@ -233,7 +233,9 @@ async fn main() -> Result<()> {
     .await?;
     let config = match std::env::var("STRATEGY_CONFIG_PATH") {
         Ok(path) => serde_json::from_str(&std::fs::read_to_string(path)?)?,
-        Err(std::env::VarError::NotPresent) => trading_quant::config::Config::default(),
+        Err(std::env::VarError::NotPresent) => {
+            trading_quant::config::Config::confirmed_breakout_1h()
+        }
         Err(error) => return Err(error.into()),
     };
     let engine = Arc::new(trading_quant::Engine::builtin(config)?);

@@ -1,0 +1,52 @@
+{
+  "checked_at_utc": "2026-11-12T09:26:25.003405+00:00",
+  "phase": "10C external acceptance pending",
+  "checks": {
+    "rust_all_targets": "passed",
+    "rust_summary_including_signal_test_subprocesses": {
+      "passed": 87,
+      "failed": 0,
+      "ignored": 15
+    },
+    "rust_format": "passed",
+    "clippy_all_targets": "passed",
+    "dashboard_tests": 4,
+    "dashboard_build": "passed",
+    "dashboard_format": "passed",
+    "backtest_smoke": "passed",
+    "readiness_tests": 4,
+    "advisor_smoke": "passed",
+    "postgres_integration": "not run: configured database localhost:5433 unavailable"
+  },
+  "testnet_read_only": {
+    "clearinghouseState": {
+      "positions": [],
+      "margin_summary": {
+        "accountValue": "499.757821",
+        "totalNtlPos": "0.0",
+        "totalRawUsd": "499.757821",
+        "totalMarginUsed": "0.0"
+      }
+    },
+    "openOrders": {
+      "count": 0
+    }
+  },
+  "local_recovery": {
+    "engine_process_present": false,
+    "supervisor_process_present": false,
+    "configured_database_reachable": false,
+    "docker_access": "permission denied; sudo requires interactive authentication",
+    "port_3000": "occupied by another service; response does not match trading health contract",
+    "session_id_to_recover": "breakout-btc-forward-20261111",
+    "new_session_created": false,
+    "orders_sent": false
+  },
+  "paper_forward": {
+    "manifest": "artifacts/forward-paper-30d-2026-11-11/manifest.json",
+    "continuity": "interrupted; duration of gap cannot be established until original database is recovered",
+    "parameters_changed": false
+  },
+  "external_automatic_fill_validated": false,
+  "live_execution_enabled": false
+}

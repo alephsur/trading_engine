@@ -2,6 +2,20 @@ use anyhow::{Result, ensure};
 use rust_decimal::Decimal as D;
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Profile {
+    #[default]
+    LegacyFour,
+    #[serde(rename = "confirmed_breakout_1h_v1")]
+    ConfirmedBreakout1hV1,
+}
+impl Profile {
+    fn is_legacy(&self) -> bool {
+        *self == Self::LegacyFour
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct EmaConfig {
@@ -40,6 +54,9 @@ pub struct ReversionConfig {
 #[serde(deny_unknown_fields)]
 pub struct Config {
     pub version: String,
+    // Omit the legacy default to preserve historical manifests and config hashes.
+    #[serde(default, skip_serializing_if = "Profile::is_legacy")]
+    pub profile: Profile,
     pub history_window: usize,
     pub ema: EmaConfig,
     pub momentum: MomentumConfig,
@@ -50,6 +67,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             version: "initial-v1".into(),
+            profile: Profile::LegacyFour,
             history_window: 100,
             ema: EmaConfig { fast: 20, slow: 50 },
             momentum: MomentumConfig {
@@ -78,7 +96,27 @@ impl Default for Config {
     }
 }
 impl Config {
+    /// Approved PAPER profile. The library default remains compatible with old replays.
+    pub fn confirmed_breakout_1h() -> Self {
+        Self {
+            version: "confirmed-breakout-1h-v1".into(),
+            profile: Profile::ConfirmedBreakout1hV1,
+            ..Self::default()
+        }
+    }
+
     pub fn validate(&self) -> Result<()> {
+        if self.profile == Profile::ConfirmedBreakout1hV1 {
+            ensure!(
+                self.history_window == 100
+                    && self.ema.fast == 20
+                    && self.ema.slow == 50
+                    && self.breakout.lookback == 20
+                    && self.breakout.volume_period == 20
+                    && self.breakout.min_volume_multiple == D::new(15, 1),
+                "confirmed_breakout_1h_v1 requires the approved 100-candle window, EMA20/50 and 20-bar breakout with 1.5x volume"
+            );
+        }
         ensure!(
             !self.version.is_empty() && self.version.len() <= 64,
             "invalid config version"

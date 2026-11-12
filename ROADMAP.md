@@ -104,7 +104,18 @@ multiusuario. Ver `ADVISOR.md`.
   pausa y recuperación del plazo tras reiniciar. Lectura externa validada.
 - [x] 10B: conectar señal reciente con riesgo y ejecución; máximo una entrada
   por sesión, deduplicación durable y comprobación de apalancamiento 1x.
-- [ ] 10C: monitor continuo de pérdidas/protecciones y ensayo automático
-  completo con recuperación.
+- [x] 10C (implementación): monitor continuo de pérdidas/protecciones/funding,
+  perfil ruptura 1h y recuperación contrastada con exchange simulado y PostgreSQL.
+- [x] Recuperación operativa: arranque único por cuenta, detección de pérdida
+  de propiedad del supervisor y parada ordenada con Ctrl+C/SIGTERM.
+- [ ] 10C (aceptación externa): señal natural de ruptura 1h, entrada automática,
+  protección y salida reconciliadas en testnet. Mantener separada esta evidencia
+  de las pruebas sintéticas y de la rentabilidad prospectiva PAPER.
 
 El observador no ejecuta órdenes. LIVE continúa bloqueado. Ver `TESTNET.md`.
+
+Estado 12-11-2026: código y comprobaciones offline consolidados. La recuperación
+externa está bloqueada por PostgreSQL local no disponible; cuenta testnet sin
+posiciones ni órdenes en consulta directa. Recuperar el historial original antes
+de continuar 10C y medir la interrupción PAPER. Ver
+`docs/phase10c-status-2026-11-12.json`.

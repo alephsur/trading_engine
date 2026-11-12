@@ -1,0 +1,58 @@
+{
+  "network": "TESTNET",
+  "date": "2026-11-11",
+  "scope": "Phase 10C implementation and live testnet observation; automatic exchange entry/exit remains pending",
+  "validation": {
+    "rust_tests": 71,
+    "postgres_integration_tests": 14,
+    "clippy": "passed_all_workspace_targets",
+    "workspace_build": "passed",
+    "synthetic_recovery_scenarios": [
+      "Partial IOC fill with missing or unknown children",
+      "Single reduce-only protective close, lost response and process restart",
+      "Expired or paused entry session continues monitoring accepted stops",
+      "Stale monitor blocks prepared entry dispatch",
+      "Daily loss latch survives recovery of equity and restart",
+      "Funding conflict and network failure block entries",
+      "Per-market signal deduplication and configured-session matching"
+    ]
+  },
+  "bounded_external_trial": {
+    "session_id": "breakout-1h-acceptance-20261111",
+    "observed_cycles": 3,
+    "expired": true,
+    "entry_attempts": 0,
+    "final_equity_test_usdc": "499.757821",
+    "final_positions": [],
+    "flat_and_no_orders_confirmed": true
+  },
+  "ongoing_external_trial": {
+    "network": "TESTNET",
+    "symbol": "BTC",
+    "strategy": "confirmed_breakout_1h_v1",
+    "entry_window_seconds": 86400,
+    "max_entry_attempts": 1,
+    "planned_max_notional_test_usdc": "20",
+    "monitor_continues_after_entry_expiry": true,
+    "session_id": "breakout-btc-forward-20261111",
+    "pid": 251107,
+    "binary_sha256": "db3d2fe368164b87acd28c1db5e1c18b9e6bd9cd8a208d99c4341b5cda59e514",
+    "config": "config/testnet-confirmed-breakout.json",
+    "live_enabled": false,
+    "started_ms": 1794414038807,
+    "expires_ms": 1794500438774,
+    "latest_observed_ms": 1794414175925,
+    "entry_attempt_consumed_at_report": false,
+    "requires_new_natural_signal": true,
+    "execution_host": "local computer; no system service or external notification configured"
+  },
+  "paper_forward_window": {
+    "start_utc": "2026-11-11T16:15:12.117000+00:00",
+    "end_exclusive_utc": "2026-12-11T16:15:12.117000+00:00",
+    "strategy_id": "4ca2bf8c79c86b9feca2ac31ee390633e0221a127b4ed2f8e15cc894c39f09ca",
+    "account_reset": false,
+    "manifest": "artifacts/forward-paper-30d-2026-11-11/manifest.json"
+  },
+  "live_execution_enabled": false,
+  "external_automatic_fill_validated": false
+}

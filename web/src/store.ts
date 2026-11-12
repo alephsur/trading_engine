@@ -26,7 +26,7 @@ export const useDashboard = defineStore("dashboard", () => {
     prices = ref<Record<string, string>>({}),
     priceFresh = ref(false);
   const symbol = ref("BTC"),
-    interval = ref("5m"),
+    interval = ref("1h"),
     candles = ref<Candle[]>([]),
     evaluations = ref<Evaluation[]>([]);
   const strategy = ref<Record<string, unknown> | null>(null),

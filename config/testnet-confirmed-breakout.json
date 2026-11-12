@@ -1,0 +1,8 @@
+{
+  "symbol": "BTC",
+  "interval": "1h",
+  "strategy": "confirmed_breakout_1h_v1",
+  "duration_seconds": 86400,
+  "poll_seconds": 30,
+  "max_entries": 1
+}

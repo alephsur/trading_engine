@@ -95,6 +95,20 @@ fn fixture() -> (Dataset, Config) {
     (data, config)
 }
 #[test]
+fn approved_profile_rejects_non_hourly_backtests() {
+    let (data, mut config) = fixture();
+    config.candidates = vec![StrategyConfig::confirmed_breakout_1h()];
+    assert!(
+        config
+            .validate(&data)
+            .unwrap_err()
+            .to_string()
+            .contains("requires a 1h backtest")
+    );
+    config.interval = "1h".into();
+    config.validate(&data).unwrap();
+}
+#[test]
 fn deterministic_latency_and_shared_execution() {
     let (data, config) = fixture();
     data.validate().unwrap();

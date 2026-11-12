@@ -10,3 +10,9 @@ __pycache__/
 .env.*
 !.env.example
 !.env.testnet.example
+
+# Local research datasets and runtime output; retain the frozen PAPER protocol.
+/artifacts/*
+!/artifacts/forward-paper-30d-2026-11-11/
+/artifacts/forward-paper-30d-2026-11-11/*
+!/artifacts/forward-paper-30d-2026-11-11/manifest.json

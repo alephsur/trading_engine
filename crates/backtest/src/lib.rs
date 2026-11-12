@@ -66,6 +66,11 @@ impl Config {
         );
         let mut ids = std::collections::BTreeSet::new();
         for config in &self.candidates {
+            ensure!(
+                config.profile != trading_quant::config::Profile::ConfirmedBreakout1hV1
+                    || self.interval == "1h",
+                "confirmed_breakout_1h_v1 requires a 1h backtest"
+            );
             let engine = Engine::builtin(config.clone())?;
             ensure!(ids.insert(engine.id().to_owned()), "duplicate candidate");
         }

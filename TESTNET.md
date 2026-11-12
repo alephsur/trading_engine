@@ -291,14 +291,16 @@ comprueban de nuevo al reclamar el envío; una orden ya reclamada y en vuelo pue
 llegar después de pedir pausa. Las respuestas inciertas nunca se reenvían.
 
 El proceso termina al consumir el intento o vencer el plazo; los errores intentan
-persistir una pausa y detienen el proceso. Ctrl+C entre ciclos persiste una pausa.
+persistir una pausa y detienen el proceso. Ctrl+C o SIGTERM quedan registrados
+durante el ciclo y persisten una pausa cuando este termina.
 Un fallo de base de datos puede impedir guardarla, pero no habilita un reenvío de
 un intento consumido. El informe distingue reserva de intento y estado real de
 transporte; no interpreta una reserva como una ejecución.
 
 **Límite operativo:** envía un bracket IOC con stop/objetivo reduce-only y hace
 reconciliación posterior. No es todavía un servicio continuo de protección,
-financiación y pérdidas: fase 10C pendiente. El fin de sesión o la pausa no cierran
+financiación y pérdidas para el perfil histórico BTC/EMA. El perfil supervisado
+de ruptura 1h se describe a continuación. El fin de sesión o la pausa no cierran
 una posición ni cancelan protecciones. Revisar cuenta/órdenes y usar `reconcile`
 o `watch` para seguimiento; el ensayo debe ser supervisado. Una ACK no garantiza
 que todas las patas estén aceptadas: comprobar el informe y la cuenta.
@@ -307,3 +309,135 @@ Ensayo supervisado del 11-11-2026: sesión de 120 segundos completada por
 expiración, sin cruce EMA ni intento de entrada. Se verificó BTC aislado a 1x.
 Esto valida lectura/reconciliación/espera/expiración, no un fill automático.
 Evidencia: `docs/testnet-auto-acceptance-2026-11-11.json`.
+
+## Supervisión y ruptura confirmada 1h — fase 10C
+
+`config/testnet-confirmed-breakout.json` selecciona exactamente la estrategia
+`confirmed_breakout_1h_v1` de PAPER, sobre 100 velas confirmadas **de testnet**.
+Admite BTC, ETH, SOL o HYPE como activo de una sesión. Mantiene **un intento por
+sesión**, cuenta plana antes de entrar, importe planificado máximo 20 USDC de
+prueba, margen aislado 1x, sizing ATR y todos los límites existentes. Los datos
+mainnet de PAPER no disparan órdenes testnet. La configuración histórica permanece
+compatible y conserva sus sesiones/identificadores.
+
+### Monitor sin claves ni órdenes
+
+```sh
+cargo run --locked -p trading-testnet -- supervise-once
+cargo run --locked -p trading-testnet -- supervise-run
+cargo run --locked -p trading-testnet -- supervise-status
+```
+
+El monitor coteja posiciones con fills, órdenes abiertas con los identificadores
+reconciliados y stop/objetivo con la intención firmada. Exige lado opuesto,
+cantidad suficiente, tipo correcto, precio de disparo y `reduceOnly`. Una ACK o
+`waitingForTrigger` no acreditan protección. Lee y conserva funding sin sumarlo
+de nuevo al patrimonio que proporciona el exchange.
+
+La pérdida del 1 % diario se observa en cada ciclo, aunque no haya entradas.
+La referencia diaria es la primera observación persistida de patrimonio; las
+transferencias externas también afectan esa variación, por lo que la cuenta debe
+seguir siendo exclusiva del ensayo. El bloqueo se mantiene hasta el siguiente
+día UTC, incluso si el saldo se recupera o se reinicia el proceso. Una sesión
+pausada permanece pausada al cambiar de día.
+
+Al activar supervisión se crea un control de cuenta: todas las entradas, incluidas
+las manuales, necesitan un ciclo correcto de menos de 60 segundos. Se vuelve a
+comprobar al reclamar el envío, además de la frescura de libros y preflight de
+15 segundos. Errores de lectura/persistencia, divergencias o protecciones faltantes
+bloquean entradas y pausan las sesiones. La recuperación permite nuevas sesiones
+solo después de un ciclo correcto; nunca reanuda automáticamente una sesión pausada.
+
+`supervise-run` consulta de nuevo diez segundos después de terminar cada ciclo.
+La duración de la reconciliación se añade a ese plazo: no es una garantía de
+reacción de diez segundos. Sigue vigente el límite de 100 solicitudes del banco
+testnet. Una respuesta de 500 registros de funding bloquea, sin afirmar cobertura
+completa ni avanzar el cursor. Los cambios de estado quedan en `testnet_events` y
+la situación actual en `supervise-status`; no se envían avisos externos.
+
+### Ensayo automático supervisado
+
+```sh
+TESTNET_AUTO_CONFIRM=CONFIRMED_BREAKOUT_ONE_ENTRY \
+  cargo run --locked -p trading-testnet -- auto-run ruptura-btc-001 config/testnet-confirmed-breakout.json
+```
+
+También exige `TESTNET_CONFIRM=TESTNET_ONLY`. El ejemplo admite entradas durante
+24 horas como máximo; cada sesión conserva su plazo, presupuesto y configuración
+tras reiniciar. La deduplicación incluye activo, intervalo, estrategia y cierre.
+La cuenta sigue limitada a una posición de prueba a la vez.
+
+La vigilancia continúa después de consumir el intento, pausar o caducar el plazo
+de entrada. El proceso termina normalmente cuando ya no puede entrar y confirma
+cuenta plana, sin órdenes y con solicitudes resueltas. Si falta un stop, se supera
+la exposición permitida, el margen no es aislado 1x o se activa el límite diario,
+el ejecutor puede realizar **un solo intento de cierre IOC reduce-only** de la
+posición atribuida a su entrada. No toca posiciones de origen incierto.
+
+Ese cierre conserva un identificador por entrada. Respuesta perdida, caída tras
+prepararlo, rechazo o ejecución parcial no autorizan otro envío: la vigilancia
+continúa y requiere revisión del operador si queda cantidad. No retira los stops
+aceptados ni sustituye una posición no reconciliada por una estimación.
+El monitor sin firmante solo informa/bloquea; los cierres requieren `auto-run`.
+
+`auto-once` se rechaza para este perfil porque dejaría de supervisar tras una
+entrada. Ctrl+C o SIGTERM quedan registrados incluso durante una consulta.
+El proceso termina el ciclo en curso, persiste el bloqueo/pausa y sale antes de
+iniciar otro ciclo. No se cancela una petición en vuelo: ese ciclo aún puede
+completar una entrada o un cierre. La parada no cierra por sí misma posiciones
+ni elimina protecciones. Reanudar el mismo `auto-run` recupera la supervisión,
+manteniendo la pausa y el presupuesto consumido.
+
+### Arranque único y recuperación operativa
+
+`auto-run`, `auto-once`, `supervise-run` y `supervise-once` adquieren un bloqueo
+de supervisor por cuenta en PostgreSQL antes de trabajar. Un segundo supervisor
+sale con error sin cargar el firmante ni pausar al primero. Para consultar uno
+en marcha, usar `auto-status` o `supervise-status`, que no requieren ese bloqueo.
+Los observadores de velas y las consultas de estado pueden seguir funcionando.
+
+El bloqueo ocupa una conexión dedicada que se cierra al salir; no se devuelve
+bloqueada al pool. Si se pierde esa conexión, el proceso falla en la siguiente
+comprobación de ciclo e intenta persistir el bloqueo de entradas. No recupera
+la conexión en silencio. Este mecanismo evita supervisores concurrentes mientras
+la conexión permanece viva; la protección contra envíos duplicados sigue siendo
+la reclamación durable de cada orden, incluso ante una partición de red.
+
+Tras una caída abrupta, arrancar **el mismo ID y el mismo archivo de configuración**.
+Se recuperan la fecha de inicio, el vencimiento original, las reservas de intento,
+las solicitudes inciertas y las pausas. Nunca cambiar el ID para recuperar un
+intento o ampliar el plazo. El primer ciclo vuelve a reconciliar con el exchange
+antes de evaluar entradas. Una parada ordenada mantiene la pausa al reiniciar.
+SIGKILL, apagado o pérdida de DB pueden impedir persistirla; en ese caso el control
+de supervisión caduca a los 60 segundos y la reserva durable sigue evitando reenvíos.
+No se ha instalado un servicio de reinicio automático ni protección frente a la
+suspensión del ordenador.
+
+Reinicio externo verificado el 11/11/2026 con cuenta plana: la sesión conservó
+su configuración, plazo e intento disponible, y completó una nueva reconciliación.
+Un segundo proceso fue rechazado antes de cargar la clave sin pausar al primero.
+Los casos con posición abierta o transporte incierto se mantienen identificados
+como pruebas con exchange simulado. Evidencia en
+[registro de recuperación](docs/testnet-recovery-acceptance-2026-11-11.json).
+
+### Alcance de validación
+
+Las pruebas con PostgreSQL y exchange simulado cubren: fill parcial sin stop,
+cierre con respuesta perdida y reinicio sin duplicación, protecciones verificadas,
+sesión pausada/caducada que sigue monitorizando, bloqueo por monitor obsoleto y por
+pérdida diaria persistente, fallo de red y conflictos en registros de funding.
+La equivalencia de análisis 1h se contrasta para los cuatro activos.
+
+Estas pruebas no acreditan un fill automático externo de la nueva estrategia.
+Su aceptación externa requiere una señal natural nueva y completar entrada,
+protección, salida y reconciliación. Testnet tampoco demuestra la rentabilidad
+de la estrategia: esa evaluación continúa en PAPER sobre datos mainnet nuevos.
+
+Estado verificado el 11/11/2026: 71 pruebas Rust y 14 con PostgreSQL aprobadas;
+supervisión externa correcta y ensayo corto expirado sin entradas. Se inició un
+ensayo BTC de hasta 24 horas y un intento, pendiente de señal natural. Evidencia
+y límites en [registro de supervisión](docs/testnet-supervision-acceptance-2026-11-11.json).
+
+Contratos revisados: [funding y estado de cuenta](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals),
+[órdenes abiertas](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint)
+y [comportamiento de TP/SL en fills parciales](https://hyperliquid.gitbook.io/hyperliquid-docs/trading/take-profit-and-stop-loss-orders-tp-sl).

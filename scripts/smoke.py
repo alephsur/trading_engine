@@ -21,7 +21,13 @@ health = wait_ready(lambda: get("/health"))
 assert health["mode"] == "PAPER" and health["execution_enabled"] is False
 assert health["analysis_ready"]
 strategies = get("/strategies")
-assert len(strategies["manifest"]["strategies"]) == 4
+profile = strategies["manifest"]["config"].get("profile", "legacy_four")
+expected_names = (
+    {"confirmed_breakout_1h_v1"}
+    if profile == "confirmed_breakout_1h_v1"
+    else {"ema_trend_v1", "momentum_rsi_v1", "breakout_v1", "mean_reversion_v1"}
+)
+assert {s["name"] for s in strategies["manifest"]["strategies"]} == expected_names
 assert len(strategies["cursors"]) == 16
 assert strategies["analysis_only"]
 assert get("/livez")["alive"] is True
@@ -46,9 +52,14 @@ for symbol in ("BTC", "ETH", "SOL", "HYPE"):
         assert times == sorted(set(times), reverse=True)
         evaluation = get(f"/evaluations?symbol={symbol}&interval={interval}&limit=1")["evaluations"][0]
         assert evaluation["analysis_only"] and evaluation["config_id"] == strategies["config_id"]
-        assert len(evaluation["decisions"]) == 4 and evaluation["indicators"] is not None
+        assert {d["strategy"] for d in evaluation["decisions"]} == expected_names
+        assert evaluation["indicators"] is not None
         assert evaluation["close_time"] < int(time.time() * 1000)
         signals = get(f"/signals?symbol={symbol}&interval={interval}")["signals"]
+        if profile == "confirmed_breakout_1h_v1" and interval != "1h":
+            assert not signals
+            assert all(d["direction"] == "hold" and d["reason"] == "unsupported_interval"
+                       for d in evaluation["decisions"])
         assert all(s["analysis_only"] and s["direction"] in ("long", "short") for s in signals)
         assert len({s["event_id"] for s in signals}) == len(signals)
 status = get("/data-status")

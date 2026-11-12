@@ -1,3 +1,26 @@
+# Verificación — consolidación fase 10C, 12-11-2026
+
+Formato, clippy de todos los targets y tests Rust de todos los targets aprobados.
+Dashboard: cuatro tests, compilación y formato aprobados. Smoke offline de
+backtesting, cuatro tests de readiness y smoke del asesor aprobados.
+Los ejemplos de investigación se han normalizado con rustfmt sin cambiar reglas;
+las huellas históricas de sus archivos pueden diferir por formato.
+Los datasets y resultados voluminosos permanecen locales en `artifacts/`;
+el manifiesto congelado del seguimiento PAPER sí queda versionado.
+
+No se han repetido las 15 pruebas de integración ignoradas: PostgreSQL configurado
+en localhost:5433 no está accesible. Docker requiere permisos del usuario y sudo
+requiere autenticación interactiva. No hay procesos locales del motor ni supervisor;
+el puerto 3000 está ocupado por un servicio con otro contrato de salud.
+
+Consulta directa de solo lectura a testnet: cuenta sin posiciones ni órdenes
+abiertas. No se ha enviado ninguna orden ni creado otra sesión. Recuperar la
+base original y consultar `breakout-btc-forward-20261111` antes de reanudar; mantener
+su identificador, plazo y presupuesto. La aceptación externa sigue pendiente.
+La continuidad de PAPER está interrumpida: cuantificar la laguna con la base
+recuperada, sin presentar el periodo como 30 días de observación continua.
+Evidencia: `docs/phase10c-status-2026-11-12.json`.
+
 # Verificación — fase 9
 
 - 69 pruebas Rust aprobadas en el workspace: 61 sin PostgreSQL y 8 con PostgreSQL.

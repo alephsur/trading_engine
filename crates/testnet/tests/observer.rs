@@ -48,6 +48,40 @@ fn rejects_gaps_duplicates_wrong_market_and_stale_data() {
     assert!(invalid.validate().is_err());
 }
 
+#[test]
+fn hourly_profile_uses_the_same_closed_window_as_paper_for_all_assets() {
+    use trading_quant::{ClosedCandle, Engine, config::Config as QuantConfig};
+    let now = 720_005_000;
+    let last = trading_domain::data::last_closed_open(now, 3_600_000);
+    let engine = Engine::builtin(QuantConfig::confirmed_breakout_1h()).unwrap();
+    for symbol in trading_domain::SYMBOLS {
+        let mut cfg: Config = serde_json::from_str(include_str!(
+            "../../../config/testnet-confirmed-breakout.json"
+        ))
+        .unwrap();
+        cfg.symbol = symbol.into();
+        let candles: Vec<trading_domain::data::Candle> = (0..100).map(|n| {
+            let t=last-(99-n)*3_600_000;
+            serde_json::from_value(json!({"t":t,"T":t+3_599_999,"s":symbol,"i":"1h","o":"100","h":"101","l":"99","c":"100","v":"10","n":10})).unwrap()
+        }).collect();
+        let expected = engine
+            .evaluate(
+                &candles
+                    .iter()
+                    .cloned()
+                    .map(|c| ClosedCandle::new(c, true, now).unwrap())
+                    .collect::<Vec<_>>(),
+            )
+            .unwrap();
+        assert_eq!(
+            observer::evaluate(json!(candles), &cfg, now).unwrap(),
+            expected
+        );
+        cfg.interval = "1m".into();
+        assert!(cfg.validate().is_err());
+    }
+}
+
 struct Feed;
 impl InfoTransport for Feed {
     async fn info(&self, request: Value) -> anyhow::Result<Value> {

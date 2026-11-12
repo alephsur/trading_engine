@@ -81,6 +81,19 @@ impl ExchangeTransport for Client {
 
 pub trait InfoTransport: Sync {
     fn info(&self, request: Value) -> impl std::future::Future<Output = Result<Value>> + Send;
+    fn markets(&self) -> impl std::future::Future<Output = Result<Vec<ListedMarket>>> + Send {
+        async move {
+            select_markets(serde_json::from_value(
+                self.info(json!({"type":"meta"})).await?,
+            )?)
+        }
+    }
+    fn account(&self, account: &str) -> impl std::future::Future<Output = Result<Value>> + Send {
+        async move {
+            self.info(json!({"type":"clearinghouseState","user":account}))
+                .await
+        }
+    }
 }
 impl InfoTransport for Client {
     async fn info(&self, request: Value) -> Result<Value> {

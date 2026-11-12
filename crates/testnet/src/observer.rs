@@ -3,7 +3,7 @@ use anyhow::{Result, ensure};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sqlx::{PgPool, Row};
-use trading_domain::data::{Candle, last_closed_open, now_ms};
+use trading_domain::data::{Candle, interval_ms, last_closed_open, now_ms};
 use trading_quant::{ClosedCandle, Engine, Evaluation, config::Config as QuantConfig};
 
 use crate::{client::InfoTransport, model};
@@ -22,16 +22,20 @@ pub struct Config {
 impl Config {
     pub fn validate(&self) -> Result<()> {
         ensure!(
-            self.symbol == "BTC" && self.interval == "1m",
-            "observer supports BTC 1m only"
+            (self.symbol == "BTC" && self.interval == "1m" && self.strategy == "ema_trend_v1")
+                || (trading_domain::SYMBOLS.contains(&self.symbol.as_str())
+                    && self.interval == "1h"
+                    && self.strategy == "confirmed_breakout_1h_v1"),
+            "supported profiles: BTC EMA 1m or confirmed breakout 1h on BTC/ETH/SOL/HYPE"
         );
         ensure!(
-            self.strategy == "ema_trend_v1",
-            "observer supports EMA only"
-        );
-        ensure!(
-            (60..=3600).contains(&self.duration_seconds),
-            "duration must be 60..3600 seconds"
+            (60..=if self.strategy == "ema_trend_v1" {
+                3600
+            } else {
+                86_400
+            })
+                .contains(&self.duration_seconds),
+            "invalid bounded entry window (legacy: 1h maximum; confirmed breakout: 24h maximum)"
         );
         ensure!(
             (30..=300).contains(&self.poll_seconds),
@@ -45,17 +49,22 @@ impl Config {
     }
 }
 
-fn engine() -> Result<Engine> {
-    Engine::builtin(QuantConfig::default())
+fn engine(config: &Config) -> Result<Engine> {
+    Engine::builtin(if config.strategy == "confirmed_breakout_1h_v1" {
+        QuantConfig::confirmed_breakout_1h()
+    } else {
+        QuantConfig::default()
+    })
 }
 
 /// Validate the entire response before selecting a complete, contiguous closed window.
 /// The request-start clock is used, so a candle closing during HTTP transit is not finalized.
 pub fn evaluate(value: Value, config: &Config, as_of: i64) -> Result<Evaluation> {
     config.validate()?;
-    let engine = engine()?;
-    let last = last_closed_open(as_of, 60_000);
-    let first = last - (engine.window() as i64 - 1) * 60_000;
+    let engine = engine(config)?;
+    let step = interval_ms(&config.interval)?;
+    let last = last_closed_open(as_of, step);
+    let first = last - (engine.window() as i64 - 1) * step;
     let mut candles: Vec<Candle> = serde_json::from_value(value)?;
     ensure!(
         candles.len() <= engine.window() + 2,
@@ -68,7 +77,7 @@ pub fn evaluate(value: Value, config: &Config, as_of: i64) -> Result<Evaluation>
             "wrong candle market"
         );
         ensure!(
-            candle.t >= first && candle.t <= as_of / 60_000 * 60_000,
+            candle.t >= first && candle.t <= as_of / step * step,
             "candle outside requested window"
         );
     }
@@ -100,7 +109,8 @@ pub async fn start(pool: &PgPool, account: &str, id: &str, config: &Config) -> R
     model::command_id(id)?;
     config.validate()?;
     // Pin the algorithm as well as the operator configuration across restarts.
-    let manifest = json!({"observer_version":1,"settings":config,"quant":engine()?.manifest()});
+    let manifest =
+        json!({"observer_version":1,"settings":config,"quant":engine(config)?.manifest()});
     let now = now_ms();
     sqlx::query("INSERT INTO testnet_observer_sessions(account,session_id,config,started_ms,expires_ms) VALUES($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING")
         .bind(account).bind(id).bind(&manifest).bind(now).bind(now + config.duration_seconds * 1000)
@@ -157,7 +167,8 @@ pub async fn tick<T: InfoTransport>(
         return Ok(current);
     }
     let as_of = now_ms();
-    let first = last_closed_open(as_of, 60_000) - (engine()?.window() as i64 - 1) * 60_000;
+    let step = interval_ms(&config.interval)?;
+    let first = last_closed_open(as_of, step) - (engine(config)?.window() as i64 - 1) * step;
     let candles = client.info(json!({"type":"candleSnapshot","req":{"coin":config.symbol,"interval":config.interval,"startTime":first,"endTime":as_of}})).await?;
     let evaluation = evaluate(candles, config, as_of)?;
     let mut tx = pool.begin().await?;

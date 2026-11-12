@@ -1,0 +1,66 @@
+{
+  "verified_at_utc": "2026-11-11T17:09:33.428186+00:00",
+  "network": "TESTNET",
+  "live_execution_enabled": false,
+  "scope": "Process restart while flat with no automatic claim; duplicate process rejection. No external automatic fill.",
+  "session_id": "breakout-btc-forward-20261111",
+  "runtime": {
+    "restarted_at_utc": "2026-11-11T17:08:19.563061+00:00",
+    "old_pid": 251107,
+    "new_pid": 276252,
+    "previous_binary_sha256": "db3d2fe368164b87acd28c1db5e1c18b9e6bd9cd8a208d99c4341b5cda59e514",
+    "binary_sha256": "3ee43e1e97f105e6313f3d872a90776f64faa39e9840875ed0b1b79873fad495",
+    "session_id": "breakout-btc-forward-20261111",
+    "original_expires_ms": 1794500438774,
+    "reason": "flat-account crash recovery rehearsal; same session and limits",
+    "live_enabled": false
+  },
+  "preserved_fields": [
+    "started_ms",
+    "auto_started_ms",
+    "expires_ms",
+    "config",
+    "paused",
+    "entry_budget_consumed",
+    "claim"
+  ],
+  "restart_preserved_original_deadline": true,
+  "entry_budget_consumed": false,
+  "paused": false,
+  "account_after_restart": {
+    "blockers": [],
+    "daily_initial_equity": "499.758363",
+    "daily_loss_latched": false,
+    "emergency_symbols": [],
+    "equity": "499.757821",
+    "observed_ms": 1794416919905,
+    "positions": [],
+    "reliable_for_close": true,
+    "safe_to_stop": true
+  },
+  "duplicate_supervisor": {
+    "returncode": 1,
+    "message": "testnet: another TESTNET supervisor already owns this account",
+    "checked_before_signer_load": true,
+    "used_existing_session_id": true,
+    "orders_submitted_by_duplicate": false
+  },
+  "validation": {
+    "workspace_rust_tests_passed": 72,
+    "testnet_postgres_tests_passed": 9,
+    "workspace_clippy": "passed",
+    "build": "passed",
+    "os_signals_tested": [
+      "SIGINT",
+      "SIGTERM"
+    ],
+    "lost_supervisor_connection": "injected against isolated advisory lock; verified no reconnect"
+  },
+  "external_automatic_fill_validated": false,
+  "limitations": [
+    "No position or uncertain POST during external restart; those scenarios remain simulated integration tests.",
+    "Graceful termination finishes the current cycle before persisting pause; in-flight work can still complete.",
+    "No automatic restart service, external notifications or protection from host suspension installed.",
+    "Trading profitability remains unvalidated prospectively."
+  ]
+}

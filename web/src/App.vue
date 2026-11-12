@@ -26,6 +26,7 @@ const latestEvaluation = computed(
   () => [...s.evaluations].sort((a, b) => b.close_time - a.close_time)[0],
 );
 const strategyNames: Record<string, string> = {
+  confirmed_breakout_1h_v1: "Ruptura confirmada · 1 hora",
   ema_trend_v1: "Tendencia EMA",
   momentum_rsi_v1: "Momentum y RSI",
   breakout_v1: "Ruptura de rango",

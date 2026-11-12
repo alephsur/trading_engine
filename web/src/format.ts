@@ -23,6 +23,14 @@ export const time = (v: number | null | undefined) =>
     : "—";
 export const reason = (v: string) =>
   ({
+    confirmed_trend_breakout: "Ruptura confirmada a favor de la tendencia",
+    unsupported_interval: "Esta estrategia opera solo en velas de una hora",
+    excessive_signal_range: "Vela demasiado amplia para entrar",
+    trend_filter: "Ruptura sin tendencia confirmada",
+    weak_directional_close: "Cierre sin suficiente confirmación",
+    zero_volatility: "Volatilidad insuficiente",
+    warmup: "Esperando 100 velas cerradas",
+    inside_previous_channel: "Precio dentro del rango anterior",
     no_ema_cross: "Sin cruce de medias",
     momentum_or_rsi_filter: "Momentum o RSI fuera de rango",
     volume_filter: "Volumen insuficiente",

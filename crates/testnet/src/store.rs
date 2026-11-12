@@ -69,6 +69,10 @@ pub async fn prepare(
     let now = now_ms();
     let equity = model::decimal(&state["marginSummary"]["accountValue"])?;
     if matches!(intent, Intent::Entry { .. }) {
+        ensure!(
+            monitor_allows(&mut tx, account, now).await?,
+            "testnet supervisor blocks new entries"
+        );
         let blocked:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM testnet_requests WHERE account=$1 AND state NOT IN ('rejected','expired') AND COALESCE(reconciliation->>'safe_for_entry','false') <> 'true')").bind(account).fetch_one(&mut *tx).await?;
         ensure!(
             !blocked,
@@ -142,6 +146,23 @@ pub async fn prepare(
 /// At-most-once transport attempt. A crash after this commit is intentionally uncertain.
 pub async fn claim(pool: &PgPool, account: &str, id: &str) -> Result<Option<Value>> {
     let mut tx = pool.begin().await?;
+    sqlx::query("SELECT pg_advisory_xact_lock(hashtextextended($1,701))")
+        .bind(account)
+        .execute(&mut *tx)
+        .await?;
+    let entry: Option<bool> = sqlx::query_scalar(
+        "SELECT intent->>'kind'='entry' FROM testnet_requests WHERE account=$1 AND command_id=$2",
+    )
+    .bind(account)
+    .bind(id)
+    .fetch_optional(&mut *tx)
+    .await?;
+    if entry == Some(true) && !monitor_allows(&mut tx, account, now_ms()).await? {
+        sqlx::query("UPDATE testnet_requests SET state='expired' WHERE account=$1 AND command_id=$2 AND state='prepared'")
+            .bind(account).bind(id).execute(&mut *tx).await?;
+        tx.commit().await?;
+        return Ok(None);
+    }
     // Pause/expiry are checked at the durable dispatch boundary, not only before planning.
     // After this transaction commits, an in-flight send may still complete after a pause.
     let guard: Option<(bool,i64,i64)> = sqlx::query_as("SELECT o.paused,o.expires_ms,c.close_ms FROM testnet_auto_claims c JOIN testnet_observer_sessions o USING(account,session_id) WHERE c.account=$1 AND c.command_id=$2 FOR UPDATE OF o")
@@ -168,6 +189,22 @@ pub async fn claim(pool: &PgPool, account: &str, id: &str) -> Result<Option<Valu
     }
     tx.commit().await?;
     Ok(value)
+}
+
+async fn monitor_allows(
+    tx: &mut Transaction<'_, Postgres>,
+    account: &str,
+    now: i64,
+) -> Result<bool> {
+    let state: Option<(i64, bool)> = sqlx::query_as(
+        "SELECT observed_ms,blocked FROM testnet_supervision WHERE account=$1 FOR UPDATE",
+    )
+    .bind(account)
+    .fetch_optional(&mut **tx)
+    .await?;
+    Ok(state.is_none_or(|(observed, blocked)| {
+        !blocked && (0..crate::supervision::HEARTBEAT_MS).contains(&(now - observed))
+    }))
 }
 pub async fn record_response(
     pool: &PgPool,

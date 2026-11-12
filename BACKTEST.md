@@ -19,14 +19,19 @@ DATABASE_URL='postgres://trading:local_only@localhost:5433/trading' \
   cargo run --locked -p trading-backtest -- export START_MS END_MS dataset.json
 ```
 
-3. Copia [config/backtest.example.json](config/backtest.example.json), sustituye las
+3. Copia [config/backtest.confirmed-breakout.example.json](config/backtest.confirmed-breakout.example.json), sustituye las
    cuatro fronteras por fechas dentro del dataset y fija los candidatos **antes**
    de observar validación/prueba. Los valores de fecha del ejemplo son ilustrativos.
 4. Ejecuta sin necesidad de PostgreSQL ni Internet:
 
 ```sh
-cargo run --locked -p trading-backtest -- run dataset.json config/backtest.example.json report.json
+cargo run --locked -p trading-backtest -- run dataset.json config/backtest.confirmed-breakout.example.json report.json
 ```
+
+Este ejemplo usa la estrategia PAPER aprobada y el intervalo 1h. El motor rechaza
+combinar ese perfil con otros intervalos. `config/backtest.example.json` conserva
+el experimento histórico de cuatro estrategias. Cambiar el default del servidor
+no cambia los candidatos declarados explícitamente en un backtest anterior.
 
 Los archivos de salida deben ser nuevos: no se sobrescriben experimentos previos.
 El informe JSON contiene datos de procedencia, huella SHA-256 del dataset completo,
