@@ -1,0 +1,88 @@
+{
+  "verified_at_utc": "2026-11-12T21:21:25.682309+00:00",
+  "implementation_commit": "b14485e",
+  "network": "TESTNET",
+  "external_automatic_fill_validated": false,
+  "live_execution_enabled": false,
+  "previous_session": {
+    "session_id": "breakout-btc-forward-20261111",
+    "expired": true,
+    "paused": true,
+    "entry_budget_consumed": false,
+    "modified": false
+  },
+  "new_trial": {
+    "session_id": "breakout-btc-service-20261112",
+    "started_ms": 1794518413042,
+    "expires_ms": 1794604813042,
+    "duration_seconds": 86400,
+    "max_entries": 1,
+    "max_planned_notional_test_usdc": "20",
+    "paused": false,
+    "entry_budget_consumed": false,
+    "latest_decisions": [
+      {
+        "direction": "hold",
+        "reason": "volume_filter",
+        "strategy": "confirmed_breakout_1h_v1"
+      }
+    ],
+    "supervision": {
+      "assessment": {
+        "blockers": [],
+        "daily_initial_equity": "499.757821",
+        "daily_loss_latched": false,
+        "emergency_symbols": [],
+        "equity": "499.757821",
+        "observed_ms": 1794518433564,
+        "positions": [],
+        "reliable_for_close": true,
+        "safe_to_stop": true
+      },
+      "entries_blocked": false,
+      "funding_through_ms": 1794518413080,
+      "last_failure": {
+        "details": {
+          "reason": "automatic_cycle_failed"
+        },
+        "observed_ms": 1794482998557
+      },
+      "network": "TESTNET",
+      "observed_ms": 1794518433564,
+      "stale": false
+    }
+  },
+  "runtime": {
+    "service": "trading-testnet@breakout-btc-service-20261112.service",
+    "properties": {
+      "ActiveState": "active",
+      "SubState": "running",
+      "MainPID": "768028",
+      "NRestarts": "0"
+    },
+    "enabled": true,
+    "user_linger": true,
+    "restart": "on-failure; same ID, deadline and budget; bounded start rate",
+    "binary_sha256": "ffa33d24d49f9137a4d349907eb74eb64477b8bb58c380477e34c6d3c0f89237",
+    "requires": "Computer awake, database and network available; PAPER process independent"
+  },
+  "validation": {
+    "workspace_tests": "passed",
+    "workspace_postgres_integration_tests": 15,
+    "final_testnet_integration_tests": 9,
+    "final_testnet_tests": "passed",
+    "clippy": "passed",
+    "fmt": "passed",
+    "workspace_build": "passed",
+    "service_unit_verify": "passed; unrelated existing spice-vdagent unit warning",
+    "second_supervisor": "rejected without affecting active service",
+    "paper_health": "ready"
+  },
+  "acceptance_remaining": [
+    "new natural confirmed-breakout signal",
+    "automatic entry fill reconciled",
+    "stop and target verified against exchange",
+    "exit fill reconciled; flat account and no unresolved orders"
+  ],
+  "no_signal_policy": "Expire original window; do not force a signal, extend the deadline, or automatically create another session."
+}

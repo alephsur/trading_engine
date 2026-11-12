@@ -123,3 +123,8 @@ La interrupción desde el último tick hasta el reinicio fue de unas 17 h 47 min
 no equivale a observación prospectiva continua. Ver
 `docs/phase10c-recovery-2026-11-12.json` (el estado anterior se conserva en
 `docs/phase10c-status-2026-11-12.json`).
+
+Nuevo ensayo supervisado: `breakout-btc-service-20261112`, servicio de usuario
+activo, límite de un intento y vencimiento 13-11-2026 21:20:13 UTC. Primera
+supervisión sin bloqueos ni posiciones; aún sin señal natural. Evidencia en
+`docs/phase10c-service-2026-11-12.json`. No se marca 10C aceptada por este arranque.

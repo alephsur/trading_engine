@@ -1,3 +1,24 @@
+# Diagnóstico y servicio testnet — 12-11-2026
+
+Diagnósticos sanitizados con etapa, categoría y código HTTP; último fallo visible
+incluso tras recuperación. Pruebas de contexto/redacción, persistencia, pausa y
+evidencia de stop/objetivo aprobadas. Todos los targets Rust y las 15 integraciones
+PostgreSQL pasan; tras la última ampliación de evidencia se repitieron los tests
+testnet, incluidas sus nueve integraciones. Clippy, formato y build aprobados.
+
+Plantilla systemd de usuario verificada e instalada. Servicio habilitado y activo
+para `breakout-btc-service-20261112`, 24 horas y un intento; inicio 12-11-2026
+21:20:13 UTC y vencimiento 13-11-2026 21:20:13 UTC. Linger habilitado para mantener
+servicios de usuario al cerrar sesión. Una segunda instancia fue rechazada sin
+pausar el servicio. No se ha inyectado una caída en esta nueva sesión externa;
+los escenarios de recuperación con posición siguen siendo pruebas simuladas.
+
+Primera supervisión externa correcta, cuenta plana/sin órdenes, sin bloqueos,
+sin intento consumido. La vela observada no genera señal por filtro de volumen.
+No se modificó la sesión anterior, pausada y vencida. PAPER sigue listo.
+Evidencia: `docs/phase10c-service-2026-11-12.json`. La aceptación externa sigue
+pendiente de señal natural, fill, protección y salida reconciliadas.
+
 # Recuperación y corrección TLS — 12-11-2026
 
 PostgreSQL recuperado. Las 15 pruebas de integración pasan. Formato, clippy,
