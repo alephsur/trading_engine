@@ -493,3 +493,21 @@ al cerrar sesión y arrancar al iniciar el equipo. PostgreSQL y la red deben est
 disponibles; el servicio no inicia Docker ni evita la suspensión. El proceso PAPER
 actual conserva su arranque independiente. Los avisos quedan en el journal y en
 la base, sin notificaciones externas configuradas.
+
+### Lecturas ante fallos transitorios — 13-11-2026
+
+Una consulta de solo lectura a `/info` admite hasta tres intentos en total ante
+HTTP 502/503/504, timeout, fallo de conexión o respuesta incompleta. Las pausas
+entre intentos son de 2 y 4 segundos y cada petición conserva el limitador de
+frecuencia existente. Los reintentos se registran con diagnóstico sanitizado en
+el journal. No se reintentan 429, otros errores HTTP, JSON inválido ni validaciones.
+
+Las órdenes de `/exchange` conservan un único intento de transporte, incluso
+ante timeout o HTTP 502. Agotar los intentos de lectura propaga el error y mantiene
+la pausa durable existente. La frescura de snapshots y el bloqueo de entradas
+siguen vigentes; un reintento no vuelve válido un snapshot obsoleto. Nunca se
+reanuda una sesión pausada ni se reinicia su presupuesto automáticamente.
+
+El ensayo `breakout-btc-service-20261112` quedó pausado tras un HTTP 502 al leer
+funding, sin entrada, y se conserva intacto. Esta corrección evita que un único
+fallo transitorio de lectura termine inmediatamente un ensayo futuro.
