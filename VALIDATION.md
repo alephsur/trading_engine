@@ -1,3 +1,23 @@
+# Aceptación sintética externa — 13-11-2026
+
+`synthetic-btc-20261113-001`: una entrada long de 0,00028 BTC a 69.280 USDC
+(19,3984 USDC de prueba). Stop 68.660 y objetivo 70.741 observados en el exchange,
+reduce-only, lado y cantidad correctos. Cierre IOC completo a 69.281 USDC.
+Comisiones totales 0,017458 USDC; variación de patrimonio -0,017178 USDC.
+Cuenta final plana, sin órdenes abiertas y todas las solicitudes reconciliadas.
+Los triggers se cancelaron como reduce-only tras cerrar; no se ejerció su disparo.
+
+Se conservó la evaluación natural sin modificar: señal long sintética en evento
+separado. Un primer plan ATR fue rechazado antes de reservar/enviar por exceder
+el límite del stop; se usó el perfil de integración existente (stop 1 %, objetivo
+2 %) para validar ejecución. Esto no valida la señal natural ni el sizing ATR.
+El ensayo natural anterior sigue pausado y su servicio quedó deshabilitado.
+
+Tests de todos los targets, clippy, formato y compilación aprobados. Las diez
+integraciones testnet pasan, incluida señal sintética, protección, cierre y replay
+sin duplicación con exchange simulado. Evidencia externa completa en
+`docs/testnet-synthetic-acceptance-2026-11-13.json`.
+
 # Reintentos de lectura testnet — 13-11-2026
 
 La sesión del 12-11 se pausó por HTTP 502 al consultar funding, sin consumir

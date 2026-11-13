@@ -1,0 +1,394 @@
+{
+  "close_id": "synthetic-btc-20261113-001-close",
+  "entry_id": "synthetic-btc-20261113-001",
+  "evidence": [
+    {
+      "kind": "synthetic_signal",
+      "observed_ms": 1794564330241,
+      "payload": {
+        "direction": "long",
+        "emitted_ms": 1794564330239,
+        "exit_policy": "single reduce-only IOC after protection assessment",
+        "intent": {
+          "buy": true,
+          "kind": "entry",
+          "limit": "69354",
+          "quantity": "0.00028",
+          "stop": "68660",
+          "symbol": "BTC",
+          "take_profit": "70741"
+        },
+        "natural_acceptance": false,
+        "risk_profile": "existing_integration_stop_1pct_target_2pct",
+        "source_evaluation": {
+          "analysis_only": true,
+          "close_time": 1794563999999,
+          "config_id": "4ca2bf8c79c86b9feca2ac31ee390633e0221a127b4ed2f8e15cc894c39f09ca",
+          "decisions": [
+            {
+              "direction": "hold",
+              "reason": "volume_filter",
+              "strategy": "confirmed_breakout_1h_v1"
+            }
+          ],
+          "indicators": {
+            "atr_14": "1040.0642762739735958775850388",
+            "ema_20": "71153.700807843606966716255051",
+            "ema_50": "72813.909220953049788479740175",
+            "macd_12_26_9": {
+              "histogram": "-180.4236059313364315003864731",
+              "line": "-1331.791122230096516118357217",
+              "signal": "-1151.3675162987600846179707439"
+            },
+            "previous_volume_sma_20": "1.2614990",
+            "rsi_14": "24.544302797849774199304758070",
+            "volume": "1.1437"
+          },
+          "input_hash": "d300ad0c8432c383a5cd0e90ee7058a3c5860e473b97005c15566ed7abad4a02",
+          "interval": "1h",
+          "open_time": 1794560400000,
+          "symbol": "BTC",
+          "window_start": 1794204000000
+        },
+        "synthetic": true
+      }
+    },
+    {
+      "kind": "prepared",
+      "observed_ms": 1794564338291,
+      "payload": {
+        "expires_ms": 1794564348263,
+        "intent": {
+          "buy": true,
+          "kind": "entry",
+          "limit": "69354",
+          "quantity": "0.00028",
+          "stop": "68660",
+          "symbol": "BTC",
+          "take_profit": "70741"
+        },
+        "nonce": 1794564338263
+      }
+    },
+    {
+      "kind": "dispatch_claimed",
+      "observed_ms": 1794564338302,
+      "payload": {
+        "outcome": "unknown_until_reconciled"
+      }
+    },
+    {
+      "kind": "exchange_response",
+      "observed_ms": 1794564341015,
+      "payload": {
+        "classification": "acknowledged"
+      }
+    },
+    {
+      "kind": "reconciled",
+      "observed_ms": 1794564372324,
+      "payload": {
+        "all_terminal": false,
+        "complete": true,
+        "observed_ms": 1794564372323,
+        "orders": [
+          {
+            "cloid": "0xf3295f090f2253fe5068d59acff7aa67",
+            "fees": "0.008729",
+            "filled": "0.00028",
+            "fills_reconciled": true,
+            "oid": 65221461060,
+            "original": "0.00028",
+            "remaining": "0.0",
+            "status": "filled"
+          },
+          {
+            "cloid": "0x4dc5ce6c60c8a81eb9658968673ed703",
+            "fees": "0",
+            "filled": "0",
+            "fills_reconciled": true,
+            "oid": 65221461061,
+            "original": "0.00028",
+            "remaining": "0.00028",
+            "status": "open"
+          },
+          {
+            "cloid": "0x549bdb687e138cea9ecdb4ec1ca3f009",
+            "fees": "0",
+            "filled": "0",
+            "fills_reconciled": true,
+            "oid": 65221461062,
+            "original": "0.00028",
+            "remaining": "0.00028",
+            "status": "open"
+          }
+        ],
+        "safe_for_entry": false
+      }
+    },
+    {
+      "kind": "protection_observed",
+      "observed_ms": 1794564374518,
+      "payload": {
+        "assessment": {
+          "blockers": [],
+          "daily_initial_equity": "499.757821",
+          "daily_loss_latched": false,
+          "emergency_symbols": [],
+          "equity": "499.748252",
+          "observed_ms": 1794564368276,
+          "positions": [
+            {
+              "entry_command": "synthetic-btc-20261113-001",
+              "position_value": "19.39756",
+              "quantity": "0.00028",
+              "stop_confirmed": true,
+              "symbol": "BTC",
+              "target_confirmed": true
+            }
+          ],
+          "reliable_for_close": true,
+          "safe_to_stop": false
+        },
+        "frontend_open_orders": [
+          {
+            "children": [],
+            "cloid": "0x549bdb687e138cea9ecdb4ec1ca3f009",
+            "coin": "BTC",
+            "isPositionTpsl": false,
+            "isTrigger": true,
+            "limitPx": "69326.0",
+            "oid": 65221461062,
+            "orderType": "Take Profit Market",
+            "origSz": "0.00028",
+            "reduceOnly": true,
+            "side": "A",
+            "sz": "0.00028",
+            "tif": null,
+            "timestamp": 1794564340639,
+            "triggerCondition": "Price above 70741",
+            "triggerPx": "70741.0"
+          },
+          {
+            "children": [],
+            "cloid": "0x4dc5ce6c60c8a81eb9658968673ed703",
+            "coin": "BTC",
+            "isPositionTpsl": false,
+            "isTrigger": true,
+            "limitPx": "67286.0",
+            "oid": 65221461061,
+            "orderType": "Stop Market",
+            "origSz": "0.00028",
+            "reduceOnly": true,
+            "side": "A",
+            "sz": "0.00028",
+            "tif": null,
+            "timestamp": 1794564340639,
+            "triggerCondition": "Price below 68660",
+            "triggerPx": "68660.0"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "reconciled",
+      "observed_ms": 1794564427779,
+      "payload": {
+        "all_terminal": true,
+        "complete": true,
+        "observed_ms": 1794564427779,
+        "orders": [
+          {
+            "cloid": "0xf3295f090f2253fe5068d59acff7aa67",
+            "fees": "0.008729",
+            "filled": "0.00028",
+            "fills_reconciled": true,
+            "oid": 65221461060,
+            "original": "0.00028",
+            "remaining": "0.0",
+            "status": "filled"
+          },
+          {
+            "cloid": "0x4dc5ce6c60c8a81eb9658968673ed703",
+            "fees": "0",
+            "filled": "0",
+            "fills_reconciled": true,
+            "oid": 65221461061,
+            "original": "0.00028",
+            "remaining": "0.00028",
+            "status": "reduceOnlyCanceled"
+          },
+          {
+            "cloid": "0x549bdb687e138cea9ecdb4ec1ca3f009",
+            "fees": "0",
+            "filled": "0",
+            "fills_reconciled": true,
+            "oid": 65221461062,
+            "original": "0.00028",
+            "remaining": "0.00028",
+            "status": "reduceOnlyCanceled"
+          }
+        ],
+        "safe_for_entry": true
+      }
+    }
+  ],
+  "final_assessment": {
+    "blockers": [],
+    "daily_initial_equity": "499.757821",
+    "daily_loss_latched": false,
+    "emergency_symbols": [],
+    "equity": "499.740643",
+    "observed_ms": 1794564423551,
+    "positions": [],
+    "reliable_for_close": true,
+    "safe_to_stop": true
+  },
+  "natural_acceptance": false,
+  "network": "TESTNET",
+  "requests": [
+    {
+      "command_id": "synthetic-btc-20261113-001-close",
+      "created_ms": 1794564382368,
+      "intent": {
+        "kind": "close",
+        "limit": null,
+        "symbol": "BTC"
+      },
+      "nonce": 1794564382368,
+      "reconciliation": {
+        "all_terminal": true,
+        "complete": true,
+        "observed_ms": 1794564427779,
+        "orders": [
+          {
+            "cloid": "0x5afe9ed9560a29709d05e5871710f4b5",
+            "fees": "0.008729",
+            "filled": "0.00028",
+            "fills_reconciled": true,
+            "oid": 65221493727,
+            "original": "0.00028",
+            "remaining": "0.0",
+            "status": "filled"
+          }
+        ],
+        "safe_for_entry": true
+      },
+      "response": {
+        "response": {
+          "data": {
+            "statuses": [
+              {
+                "filled": {
+                  "avgPx": "69281.0",
+                  "cloid": "0x5afe9ed9560a29709d05e5871710f4b5",
+                  "oid": 65221493727,
+                  "totalSz": "0.00028"
+                }
+              }
+            ]
+          },
+          "type": "order"
+        },
+        "status": "ok"
+      },
+      "state": "acknowledged"
+    },
+    {
+      "command_id": "synthetic-btc-20261113-001",
+      "created_ms": 1794564338263,
+      "intent": {
+        "buy": true,
+        "kind": "entry",
+        "limit": "69354",
+        "quantity": "0.00028",
+        "stop": "68660",
+        "symbol": "BTC",
+        "take_profit": "70741"
+      },
+      "nonce": 1794564338263,
+      "reconciliation": {
+        "all_terminal": true,
+        "complete": true,
+        "observed_ms": 1794564427779,
+        "orders": [
+          {
+            "cloid": "0xf3295f090f2253fe5068d59acff7aa67",
+            "fees": "0.008729",
+            "filled": "0.00028",
+            "fills_reconciled": true,
+            "oid": 65221461060,
+            "original": "0.00028",
+            "remaining": "0.0",
+            "status": "filled"
+          },
+          {
+            "cloid": "0x4dc5ce6c60c8a81eb9658968673ed703",
+            "fees": "0",
+            "filled": "0",
+            "fills_reconciled": true,
+            "oid": 65221461061,
+            "original": "0.00028",
+            "remaining": "0.00028",
+            "status": "reduceOnlyCanceled"
+          },
+          {
+            "cloid": "0x549bdb687e138cea9ecdb4ec1ca3f009",
+            "fees": "0",
+            "filled": "0",
+            "fills_reconciled": true,
+            "oid": 65221461062,
+            "original": "0.00028",
+            "remaining": "0.00028",
+            "status": "reduceOnlyCanceled"
+          }
+        ],
+        "safe_for_entry": true
+      },
+      "response": {
+        "response": {
+          "data": {
+            "statuses": [
+              {
+                "filled": {
+                  "avgPx": "69280.0",
+                  "cloid": "0xf3295f090f2253fe5068d59acff7aa67",
+                  "oid": 65221461060,
+                  "totalSz": "0.00028"
+                }
+              },
+              "waitingForTrigger",
+              "waitingForTrigger"
+            ]
+          },
+          "type": "order"
+        },
+        "status": "ok"
+      },
+      "state": "acknowledged"
+    }
+  ],
+  "synthetic": true,
+  "verification": {
+    "verified_at_utc": "2026-11-13T10:08:13.755906+00:00",
+    "synthetic_execution_accepted": true,
+    "natural_signal_accepted": false,
+    "atr_strategy_sizing_accepted": false,
+    "stop_or_target_trigger_exercised": false,
+    "exit_type": "operator-authorized automatic reduce-only IOC after protection observation",
+    "preflight_atr_rejected_without_order": true,
+    "entry_fill_btc": "0.00028",
+    "entry_average_price": "69280.0",
+    "entry_notional_test_usdc": "19.39840",
+    "fees_test_usdc": "0.017458",
+    "equity_delta_test_usdc": "-0.017178",
+    "live_enabled": false,
+    "external_replay": {
+      "same_nonces": true,
+      "request_count": 2,
+      "dispatch_count": 2,
+      "synthetic_signal_count": 1,
+      "final_flat": true
+    }
+  }
+}

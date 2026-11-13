@@ -110,7 +110,9 @@ multiusuario. Ver `ADVISOR.md`.
   de propiedad del supervisor y parada ordenada con Ctrl+C/SIGTERM.
 - [x] Diagnóstico persistente de fallos, evidencia de protección y servicio de usuario
   que recupera la misma sesión sin ampliar plazo ni presupuesto.
-- [ ] 10C (aceptación externa): señal natural de ruptura 1h, entrada automática,
+- [x] Prueba externa sintética: entrada, stop/objetivo verificados y cierre IOC
+  reconciliado con perfil de integración 1 %/2 %; no valida señal natural ni ATR.
+- [ ] 10C (aceptación externa natural): señal natural de ruptura 1h, entrada automática,
   protección y salida reconciliadas en testnet. Mantener separada esta evidencia
   de las pruebas sintéticas y de la rentabilidad prospectiva PAPER.
 
@@ -134,3 +136,10 @@ Actualización 13-11-2026: el ensayo del día 12 se pausó sin entrada por un HT
 transitorias; órdenes y pausas de seguridad conservan sus límites. Nuevo ensayo
 `breakout-btc-service-20261113` activo hasta 14-11-2026 10:33:36 CET,
 sin señal ni entrada al verificar. Evidencia: `docs/phase10c-trial-2026-11-13.json`.
+
+Prueba sintética 13-11-2026: 0,00028 BTC, entrada y cierre completos; stop y
+objetivo verificados, cuenta plana y órdenes terminadas. El intento previo con
+ATR fue rechazado antes de enviar por superar la distancia máxima del stop.
+La prueba aceptada usó el perfil de integración existente, sin relajar límites.
+Evidencia: `docs/testnet-synthetic-acceptance-2026-11-13.json`.
+El ensayo natural permanece pausado tras fallos de lectura; no se ha rearmado.
