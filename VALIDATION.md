@@ -1,3 +1,23 @@
+# Reintentos de lectura testnet — 13-11-2026
+
+La sesión del 12-11 se pausó por HTTP 502 al consultar funding, sin consumir
+su entrada. La causa quedó identificada por el diagnóstico persistente.
+Se añadieron hasta tres intentos exclusivamente para lecturas transitorias de
+`/info`, con esperas de 2 y 4 segundos y el limitador existente. Las órdenes
+mantienen un solo intento de transporte. No se relajan frescura ni pausas.
+
+Pruebas de recuperación tras dos 502, agotamiento, timeout/conexión/respuesta
+incompleta, denegación de reintentos para escrituras, 429, 400 y JSON inválido
+aprobadas. Tests de todos los targets Rust, 15 integraciones PostgreSQL,
+clippy, formato y compilación conjunta aprobados. La comprobación externa previa
+confirmó cuenta plana, sin bloqueos ni órdenes pendientes. PAPER sigue listo.
+
+Se deshabilitó el arranque automático del servicio anterior, ya detenido;
+su registro permanece pausado e intacto. El nuevo ensayo usa el servicio
+`trading-testnet@breakout-btc-service-20261113.service`, 24 horas y una entrada
+máxima de 20 USDC de notional planificado. La aceptación externa continúa
+pendiente; arrancar el ensayo o superar pruebas sintéticas no la acredita.
+
 # Diagnóstico y servicio testnet — 12-11-2026
 
 Diagnósticos sanitizados con etapa, categoría y código HTTP; último fallo visible

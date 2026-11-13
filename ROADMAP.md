@@ -128,3 +128,9 @@ Nuevo ensayo supervisado: `breakout-btc-service-20261112`, servicio de usuario
 activo, límite de un intento y vencimiento 13-11-2026 21:20:13 UTC. Primera
 supervisión sin bloqueos ni posiciones; aún sin señal natural. Evidencia en
 `docs/phase10c-service-2026-11-12.json`. No se marca 10C aceptada por este arranque.
+
+Actualización 13-11-2026: el ensayo del día 12 se pausó sin entrada por un HTTP
+502 en lectura de funding. Se añadieron reintentos acotados solo para lecturas
+transitorias; órdenes y pausas de seguridad conservan sus límites. Nuevo ensayo
+`breakout-btc-service-20261113` activo hasta 14-11-2026 10:33:36 CET,
+sin señal ni entrada al verificar. Evidencia: `docs/phase10c-trial-2026-11-13.json`.

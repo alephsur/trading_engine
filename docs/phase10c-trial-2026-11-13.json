@@ -1,0 +1,83 @@
+{
+  "verified_at_utc": "2026-11-13T09:34:28.506981+00:00",
+  "implementation_commit": "cdf9e8a",
+  "previous_session": {
+    "id": "breakout-btc-service-20261112",
+    "paused": true,
+    "entry_budget_consumed": false,
+    "failure": {
+      "details": {
+        "diagnostic": {
+          "category": "http_status",
+          "http_status": 502,
+          "operation": "info",
+          "stage": "funding"
+        },
+        "reason": "automatic_cycle_failed"
+      },
+      "observed_ms": 1794519982534
+    },
+    "service_disabled": true,
+    "session_data_preserved": true
+  },
+  "new_trial": {
+    "id": "breakout-btc-service-20261113",
+    "started_ms": 1794562416799,
+    "expires_ms": 1794648816799,
+    "expires_madrid": "2026-11-14T10:33:36.799000+01:00",
+    "max_entry_attempts": 1,
+    "max_planned_notional_test_usdc": "20",
+    "paused": false,
+    "entry_budget_consumed": false,
+    "latest_decisions": [
+      {
+        "direction": "hold",
+        "reason": "volume_filter",
+        "strategy": "confirmed_breakout_1h_v1"
+      }
+    ],
+    "supervision": {
+      "assessment": {
+        "blockers": [],
+        "daily_initial_equity": "499.757821",
+        "daily_loss_latched": false,
+        "emergency_symbols": [],
+        "equity": "499.757821",
+        "observed_ms": 1794562437115,
+        "positions": [],
+        "reliable_for_close": true,
+        "safe_to_stop": true
+      },
+      "entries_blocked": false,
+      "funding_through_ms": 1794562416842,
+      "last_failure": {
+        "details": {
+          "diagnostic": {
+            "category": "http_status",
+            "http_status": 502,
+            "operation": "info",
+            "stage": "funding"
+          },
+          "reason": "automatic_cycle_failed"
+        },
+        "observed_ms": 1794519982534
+      },
+      "network": "TESTNET",
+      "observed_ms": 1794562437115,
+      "stale": false
+    }
+  },
+  "binary_sha256": "67bad9624ad0ef28655419df3c8fa7d523b88d0454c9639fafe78f2da5400187",
+  "validation": {
+    "all_target_tests": "passed",
+    "postgres_integration_tests": 15,
+    "clippy": "passed",
+    "format": "passed",
+    "workspace_build": "passed",
+    "external_initial_supervision": "passed",
+    "paper_health": "ready"
+  },
+  "external_automatic_fill_validated": false,
+  "live_execution_enabled": false,
+  "pending": "Natural signal, automatic entry, verified protection and reconciled exit. No automatic additional session or extended deadline."
+}
