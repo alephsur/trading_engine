@@ -518,8 +518,9 @@ fallo transitorio de lectura termine inmediatamente un ensayo futuro.
 además `TESTNET_CONFIRM=TESTNET_ONLY` y propiedad exclusiva del supervisor.
 Solo usar con autorización expresa para una prueba sintética. Requiere cuenta
 plana, sin órdenes y reconciliada. Emite una señal long BTC de prueba, conserva
-la evaluación real de velas 1h sin modificar y reutiliza sizing ATR, liquidez,
-riesgo, margen aislado 1x y el límite planificado de 20 USDC.
+la evaluación real de velas 1h sin modificar. Usa el planificador de integración
+existente (stop 1 %, objetivo 2 %), liquidez, riesgo, margen aislado 1x y límite
+planificado de 20 USDC. No valida el sizing ATR de la estrategia natural.
 
 El evento durable `synthetic_signal` reserva un único intento antes del envío.
 No escribe observaciones naturales ni altera su configuración. Repetir el ID

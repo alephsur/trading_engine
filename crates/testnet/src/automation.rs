@@ -66,19 +66,6 @@ pub fn plan(
     now: i64,
 ) -> Result<Intent> {
     let buy = signal(e, started, now)?;
-    plan_direction(e, markets, book, state, buy, now)
-}
-
-// Shared sizing for the explicitly labelled synthetic probe; natural signal
-// validation remains mandatory in plan(). The source evaluation is never altered.
-pub(crate) fn plan_direction(
-    e: &Evaluation,
-    markets: &[ListedMarket],
-    book: &Book,
-    state: &Value,
-    buy: bool,
-    now: i64,
-) -> Result<Intent> {
     let atr = e
         .indicators
         .as_ref()

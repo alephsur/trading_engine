@@ -59,11 +59,11 @@ pub async fn run<T: InfoTransport + ExchangeTransport>(
         let book: Book =
             serde_json::from_value(client.info(json!({"type":"l2Book","coin":"BTC"})).await?)?;
         let emitted = now_ms();
-        let intent = automation::plan_direction(&source, &markets, &book, &state, true, emitted)?;
+        let intent = crate::model::plan("BTC", true, &markets, &book, &state, emitted)?;
         owner.check().await?;
         ensure!(!shutdown.requested(), "probe stopped before reservation");
         let mut tx = pool.begin().await?;
-        store::event(&mut tx, account, id, "synthetic_signal", json!({"synthetic":true,"direction":"long","emitted_ms":emitted,"source_evaluation":source,"intent":intent,"natural_acceptance":false,"exit_policy":"single reduce-only IOC after protection assessment"})).await?;
+        store::event(&mut tx, account, id, "synthetic_signal", json!({"synthetic":true,"risk_profile":"existing_integration_stop_1pct_target_2pct","direction":"long","emitted_ms":emitted,"source_evaluation":source,"intent":intent,"natural_acceptance":false,"exit_policy":"single reduce-only IOC after protection assessment"})).await?;
         tx.commit().await?;
         // Reservation is single use, even if a crash happens before preparation.
         ensure!(
