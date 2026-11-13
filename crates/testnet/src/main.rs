@@ -62,6 +62,29 @@ async fn run() -> Result<()> {
         return Ok(());
     }
     let pool = trading_storage::connect(&std::env::var("DATABASE_URL")?).await?;
+    if args.len() == 2 && args[0] == "probe-run" {
+        ensure!(
+            std::env::var("TESTNET_CONFIRM").ok().as_deref() == Some("TESTNET_ONLY")
+                && std::env::var("TESTNET_PROBE_CONFIRM").ok().as_deref()
+                    == Some("SYNTHETIC_ONE_ENTRY"),
+            "probe requires TESTNET_ONLY and SYNTHETIC_ONE_ENTRY confirmations"
+        );
+        let mut shutdown = Shutdown::install()?;
+        let mut owner = SupervisorLock::acquire(&pool, &account).await?;
+        let signer = load_signer(&account)?;
+        let report = trading_testnet::probe::run(
+            &client,
+            &pool,
+            &signer,
+            &account,
+            &args[1],
+            &mut owner,
+            &mut shutdown,
+        )
+        .await?;
+        println!("{}", serde_json::to_string_pretty(&report)?);
+        return Ok(());
+    }
     if args == ["supervise-status"] {
         println!(
             "{}",

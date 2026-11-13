@@ -511,3 +511,28 @@ reanuda una sesión pausada ni se reinicia su presupuesto automáticamente.
 El ensayo `breakout-btc-service-20261112` quedó pausado tras un HTTP 502 al leer
 funding, sin entrada, y se conserva intacto. Esta corrección evita que un único
 fallo transitorio de lectura termine inmediatamente un ensayo futuro.
+
+### Prueba sintética externa separada
+
+`TESTNET_PROBE_CONFIRM=SYNTHETIC_ONE_ENTRY trading-testnet probe-run ID` exige
+además `TESTNET_CONFIRM=TESTNET_ONLY` y propiedad exclusiva del supervisor.
+Solo usar con autorización expresa para una prueba sintética. Requiere cuenta
+plana, sin órdenes y reconciliada. Emite una señal long BTC de prueba, conserva
+la evaluación real de velas 1h sin modificar y reutiliza sizing ATR, liquidez,
+riesgo, margen aislado 1x y el límite planificado de 20 USDC.
+
+El evento durable `synthetic_signal` reserva un único intento antes del envío.
+No escribe observaciones naturales ni altera su configuración. Repetir el ID
+solo reconcilia; una caída entre reserva y envío tampoco concede otro intento.
+La evaluación posterior conserva evidencia de stop/objetivo. Para terminar el
+ensayo se permite un único cierre IOC reduce-only de la posición atribuida a
+esa entrada, con ID derivado; también cierra si falta protección verificable.
+Una respuesta perdida no se reenvía. La comprobación termina únicamente al
+confirmar cuenta plana, órdenes resueltas y sin órdenes abiertas. Si falla o se
+interrumpe, revisar con el mismo ID; nunca sustituirlo para recuperar un intento.
+
+El resultado debe revisarse: terminar sin posición puede significar cero fills.
+La evidencia sintética valida ejecución externa, no generación natural de la
+estrategia ni un disparo real de stop/objetivo. La salida de esta prueba es un
+cierre operativo explícito; no acredita rentabilidad ni completa por sí sola
+la aceptación natural de 10C.

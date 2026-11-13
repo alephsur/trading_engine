@@ -79,6 +79,10 @@ impl InfoTransport for Exchange {
             "clearinghouseState" => Ok(
                 json!({"time":now_ms(),"assetPositions":positions,"marginSummary":{"accountValue":data["equity"]}}),
             ),
+            "candleSnapshot" => {
+                let first = request["req"]["startTime"].as_i64().unwrap();
+                Ok(json!((0..100).map(|n| {let t=first+n*3_600_000;json!({"t":t,"T":t+3_599_999,"s":"BTC","i":"1h","o":"100","h":"100.1","l":"99.9","c":"100","v":"10","n":10})}).collect::<Vec<_>>()))
+            }
             "userFunding" => Ok(data["funding"].clone()),
             "userFillsByTime" => Ok(data["fills"].clone()),
             "orderStatus" => Ok(data["orders"]
@@ -134,9 +138,14 @@ impl ExchangeTransport for Exchange {
                 "open"
             };
             let size = if filled {
-                if close { "0" } else { "0.1" }
+                if close {
+                    "0".to_owned()
+                } else {
+                    (trading_testnet::model::decimal(&o["s"])? - trading_paper::dec("0.1"))
+                        .to_string()
+                }
             } else {
-                "0.2"
+                o["s"].as_str().unwrap().to_owned()
             };
             let remote = json!({"status":"order","order":{"status":status,"order":{
                 "coin":"BTC","cloid":o["c"],"oid":oid,"side":if o["b"]==true {"B"}else{"A"},
@@ -513,5 +522,60 @@ async fn hourly_claims_deduplicate_per_market_and_reject_session_mismatch() {
         .await
         .unwrap();
     assert_eq!(writes, 0);
+    drop_db(admin, pool, schema).await;
+}
+
+#[tokio::test]
+#[ignore = "requires TEST_DATABASE_URL; synthetic signal and simulated exchange only"]
+async fn synthetic_probe_is_separate_single_use_and_closes_owned_position() {
+    use trading_testnet::{
+        probe,
+        runtime::{Shutdown, SupervisorLock},
+    };
+    let (admin, pool, _, schema) = db("probe").await;
+    let exchange = Exchange::new(false);
+    let mut owner = SupervisorLock::acquire(&pool, ACCOUNT).await.unwrap();
+    let mut shutdown = Shutdown::install().unwrap();
+    let report = probe::run(
+        &exchange,
+        &pool,
+        &signer(),
+        ACCOUNT,
+        "synthetic-fixture",
+        &mut owner,
+        &mut shutdown,
+    )
+    .await
+    .unwrap();
+    assert_eq!(report["synthetic"], true);
+    assert_eq!(report["natural_acceptance"], false);
+    assert_eq!(report["final_assessment"]["safe_to_stop"], true);
+    assert!(
+        report["evidence"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|e| e["kind"] == "protection_observed"
+                && e["payload"]["assessment"]["positions"][0]["stop_confirmed"] == true)
+    );
+    let count: i64 = sqlx::query_scalar("SELECT count(*) FROM testnet_observations")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(count, 0);
+    probe::run(
+        &exchange,
+        &pool,
+        &signer(),
+        ACCOUNT,
+        "synthetic-fixture",
+        &mut owner,
+        &mut shutdown,
+    )
+    .await
+    .unwrap();
+    assert_eq!(exchange.entry_calls.load(Ordering::SeqCst), 1);
+    assert_eq!(exchange.close_calls.load(Ordering::SeqCst), 1);
+    drop(owner);
     drop_db(admin, pool, schema).await;
 }

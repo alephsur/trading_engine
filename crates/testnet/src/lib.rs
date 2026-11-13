@@ -5,6 +5,7 @@ pub mod diagnostics;
 pub mod executor;
 pub mod model;
 pub mod observer;
+pub mod probe;
 pub mod runtime;
 pub mod signing;
 pub mod store;
