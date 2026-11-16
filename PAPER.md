@@ -116,3 +116,22 @@ hasta 20 fills. No hay API de apertura manual, cambios de riesgo ni activación 
 - [Funding y precio oracle](https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding)
 - [Histórico de tasas](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals)
 - [Contextos WebSocket](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/websocket/subscriptions)
+
+## Servicio persistente y continuidad
+
+Compilar con `cargo build -p trading-server --locked`, instalar con
+`python3 scripts/install_paper_service.py` y habilitar con
+`systemctl --user enable --now trading-paper.service`. Detener antes cualquier
+proceso manual que use el mismo puerto. El lanzador lee `.env`, fija PAPER y usa
+`127.0.0.1:3001` salvo `PAPER_SERVICE_BIND_ADDR`. No reinicia el saldo ni cambia
+la estrategia. El servicio reintenta tras fallos cada 30 s, también si PostgreSQL
+no está disponible al arrancar. Para arrancar sin iniciar sesión se necesita
+`loginctl enable-linger "$USER"`. No evita la suspensión del equipo ni arranca Docker.
+
+`/paper/continuity` muestra antigüedad del último tick, interrupción abierta y los
+100 últimos huecos de más de 60 s, con recuento y duración totales. Los huecos
+históricos se recuperan de `paper_equity` y los nuevos se guardan en la misma
+transacción que el tick de reanudación. Esto mide continuidad del trabajador;
+un tick no acredita disponibilidad del feed ni valoración correcta. Consultar
+además `/health` y los bloqueos de la cuenta. Recuperar velas históricas no
+convierte una interrupción en observación prospectiva.

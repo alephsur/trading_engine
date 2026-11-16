@@ -165,3 +165,15 @@ pub async fn paper_ledger(
         .map_err(unavailable)?;
     Ok(Json(json!({kind:rows,"mode":"PAPER"})))
 }
+
+pub async fn paper_continuity(State(app): State<App>) -> Response {
+    trading_storage::paper::continuity(&app.pool)
+        .await
+        .map(Json)
+        .map_err(|_| {
+            (
+                StatusCode::SERVICE_UNAVAILABLE,
+                Json(json!({"error":"continuity unavailable"})),
+            )
+        })
+}

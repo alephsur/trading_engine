@@ -109,6 +109,7 @@ fn router(app: App) -> Router {
         .route("/evaluations", get(api::evaluations))
         .route("/signals", get(api::signals))
         .route("/paper/account", get(api::paper_account))
+        .route("/paper/continuity", get(api::paper_continuity))
         .route("/paper/positions", get(api::paper_positions))
         .route("/paper/{kind}", get(api::paper_ledger));
     Router::new()

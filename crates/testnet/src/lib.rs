@@ -10,3 +10,5 @@ pub mod runtime;
 pub mod signing;
 pub mod store;
 pub mod supervision;
+
+pub mod rejection;

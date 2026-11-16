@@ -246,3 +246,30 @@ async fn single_attempt_survives_restart_and_pause_blocks_dispatch() {
         .await
         .unwrap();
 }
+
+#[test]
+fn expected_risk_rejections_are_distinct_from_invalid_inputs() {
+    use trading_testnet::rejection::Rejection;
+    let now = 12_005_000;
+    let mut e = evaluation(now);
+    let expired = automation::signal(&e, 0, e.close_time + 120001).unwrap_err();
+    assert_eq!(
+        expired.downcast_ref::<Rejection>().unwrap().code,
+        "signal_expired"
+    );
+    for (atr, code) in [("10", "atr_volatility"), ("2", "atr_stop_incompatible")] {
+        e.indicators.as_mut().unwrap().atr_14 = Some(dec(atr));
+        let err = automation::plan(&e, &markets(), &book(now), &state(), 0, now).unwrap_err();
+        assert_eq!(err.downcast_ref::<Rejection>().unwrap().code, code);
+    }
+    e.indicators.as_mut().unwrap().atr_14 = Some(dec("0.2"));
+    for invalid in [
+        json!({}),
+        json!({"assetPositions":[],"marginSummary":{"accountValue":"0"}}),
+    ] {
+        let err = automation::plan(&e, &markets(), &book(now), &invalid, 0, now).unwrap_err();
+        assert!(err.downcast_ref::<Rejection>().is_none());
+    }
+    let err = automation::plan(&e, &markets(), &book(now - 15001), &state(), 0, now).unwrap_err();
+    assert!(err.downcast_ref::<Rejection>().is_none());
+}

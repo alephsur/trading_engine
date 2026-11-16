@@ -196,6 +196,10 @@ pub async fn tick(
             oracle: row.get::<String, _>("price").parse()?,
         });
     }
+    if state.last_tick > 0 && now - state.last_tick > 60_000 {
+        sqlx::query("INSERT INTO paper_continuity_gaps(account_id,previous_tick_ms,resumed_ms) VALUES($1,$2,$3) ON CONFLICT DO NOTHING")
+            .bind(ACCOUNT).bind(state.last_tick).bind(now).execute(&mut *tx).await?;
+    }
     let previous_blockers = state.blockers.clone();
     let changes = state.tick(
         &Input {
@@ -305,4 +309,18 @@ pub async fn ledger(pool: &PgPool, kind: &str, limit: i64) -> Result<Value> {
         return Ok(json!(rows.iter().flat_map(|r|r["fills"].as_array().into_iter().flatten().map(|f|json!({"order_id":r["id"],"symbol":r["symbol"],"buy":r["buy"],"time":r["time"],"fill":f}))).collect::<Vec<_>>()));
     }
     Ok(json!(rows))
+}
+
+/// Recording gaps are evidence of interrupted observation, not reconstructed fills.
+pub async fn continuity(pool: &PgPool) -> Result<Value> {
+    let state = read(pool).await?;
+    let now = now_ms();
+    let age = now.saturating_sub(state.last_tick);
+    let gaps: Vec<Value> = sqlx::query_scalar("SELECT jsonb_build_object('previous_tick_ms',previous_tick_ms,'resumed_ms',resumed_ms,'duration_ms',resumed_ms-previous_tick_ms) FROM paper_continuity_gaps WHERE account_id=$1 ORDER BY resumed_ms DESC LIMIT 100")
+        .bind(ACCOUNT).fetch_all(pool).await?;
+    let (count,total): (i64,i64) = sqlx::query_as("SELECT count(*),COALESCE(sum(resumed_ms-previous_tick_ms),0)::bigint FROM paper_continuity_gaps WHERE account_id=$1")
+        .bind(ACCOUNT).fetch_one(pool).await?;
+    Ok(
+        json!({"mode":"PAPER","as_of_ms":now,"last_tick_ms":state.last_tick,"last_tick_age_ms":age,"worker_fresh":(0..15_000).contains(&age),"recording_gap_open":age>60_000,"gap_threshold_ms":60000,"gap_count":count,"recorded_gap_ms":total,"recent_gaps":gaps,"limit":100,"scope":"persisted PAPER ticks; continuous ticks do not prove market feed availability"}),
+    )
 }

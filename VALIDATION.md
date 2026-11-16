@@ -470,3 +470,17 @@ No se ha simulado una desconexión de red externa ni un reinicio de órdenes:
 no hay órdenes en esta fase. La frescura y el bloqueo de modos no admitidos
 se verifican en tests unitarios. Velas, backfills, estrategias y riesgo quedan
 fuera de esta entrega.
+
+## 16-11-2026 — continuidad PAPER y rechazos testnet
+
+79 pruebas ordinarias y 17 con PostgreSQL en esquemas aislados superadas;
+formato y análisis estático de todos los objetivos correctos. Pruebas añadidas:
+hueco PAPER persistente registrado una vez, clasificación de ATR/stop/caducidad,
+rechazo deduplicado sin gastar intento ni levantar pausas, y propagación de
+fallos operativos. El exchange no recibe solicitudes en estas pruebas nuevas.
+
+PAPER comprobado con datos públicos tras instalar el servicio y tras reiniciarlo:
+salud lista, cuenta y configuración preservadas, tres huecos históricos visibles.
+La interrupción principal está correlacionada con la suspensión del sistema.
+Evidencia: `docs/continuity-acceptance-2026-11-16.json`. Esto no sustituye la
+aceptación natural testnet de 10C ni completa un periodo PAPER continuo.

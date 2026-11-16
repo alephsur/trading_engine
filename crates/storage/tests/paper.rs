@@ -132,6 +132,25 @@ async fn paper_atomicity_concurrency_restart_and_corrupt_ledger() {
             .len(),
         2
     );
+    // A worker interruption survives restart and is recorded exactly once.
+    let previous = trading_domain::data::now_ms() - 120_000;
+    sqlx::query(
+        "UPDATE paper_accounts SET state=jsonb_set(state,'{last_tick}',to_jsonb($1::bigint))",
+    )
+    .bind(previous)
+    .execute(&pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        paper::continuity(&pool).await.unwrap()["recording_gap_open"],
+        true
+    );
+    paper::tick(&pool, "fixture", true, &markets).await.unwrap();
+    paper::tick(&pool, "fixture", true, &markets).await.unwrap();
+    let continuity = paper::continuity(&pool).await.unwrap();
+    assert_eq!(continuity["gap_count"], 1);
+    assert_eq!(continuity["worker_fresh"], true);
+    assert_eq!(continuity["recent_gaps"][0]["previous_tick_ms"], previous);
     // Ledger corruption blocks both startup and further transitions.
     sqlx::query("UPDATE paper_accounts SET state=jsonb_set(state,'{cash}','\"10000\"')")
         .execute(&pool)

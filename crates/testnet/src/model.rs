@@ -145,18 +145,24 @@ pub fn entry(
         "invalid order price precision"
     );
     let notional = quantity * limit;
-    ensure!(
+    crate::rejection::check(
         notional >= dec("10") && notional <= dec("25") && notional <= equity * dec("0.15"),
-        "testnet entry notional outside conservative bounds"
-    );
+        "notional_limit",
+        "testnet entry notional outside conservative bounds",
+    )?;
     let bid = book.levels[0][0].px;
     let ask = book.levels[1][0].px;
     let mid = (bid + ask) / dec("2");
-    ensure!((ask - bid) / mid <= dec("0.002"), "spread too wide");
-    ensure!(
+    crate::rejection::check(
+        (ask - bid) / mid <= dec("0.002"),
+        "spread",
+        "spread too wide",
+    )?;
+    crate::rejection::check(
         (*limit - mid).abs() / mid <= dec("0.002"),
-        "limit too far from current market"
-    );
+        "price_distance",
+        "limit too far from current market",
+    )?;
     ensure!(
         if *buy {
             *stop < *limit && *take_profit > *limit
@@ -165,29 +171,32 @@ pub fn entry(
         },
         "stop/target on wrong side"
     );
-    ensure!(
+    crate::rejection::check(
         (*limit - *stop).abs() / limit <= dec("0.03"),
-        "stop exceeds integration risk limit"
-    );
+        "atr_stop_incompatible",
+        "stop exceeds integration risk limit",
+    )?;
     let stop_limit = price(
         *stop * if *buy { dec("0.98") } else { dec("1.02") },
         decimals,
         !*buy,
     );
     let worst_loss = (*limit - stop_limit).abs() * quantity + notional * dec("0.002");
-    ensure!(
+    crate::rejection::check(
         worst_loss <= equity * dec("0.0025"),
-        "stop risk exceeds account limit"
-    );
+        "loss_budget",
+        "stop risk exceeds account limit",
+    )?;
     let depth: D = book.levels[usize::from(*buy)]
         .iter()
         .filter(|l| if *buy { l.px <= *limit } else { l.px >= *limit })
         .map(|l| l.sz)
         .sum();
-    ensure!(
+    crate::rejection::check(
         *quantity <= depth * dec("0.1"),
-        "insufficient executable depth"
-    );
+        "liquidity",
+        "insufficient executable depth",
+    )?;
     let entry = order(
         m.asset_index,
         *buy,
@@ -300,6 +309,9 @@ pub fn plan(
 ) -> Result<Intent> {
     let m = market(markets, symbol)?;
     fresh_book(book, symbol, now)?;
+    ensure!(flat(state)?, "account must be flat");
+    let equity = decimal(&state["marginSummary"]["accountValue"])?;
+    ensure!(equity >= dec("100"), "account equity below minimum");
     for level in &book.levels[usize::from(buy)] {
         let px = level.px;
         let limit = price(
@@ -336,6 +348,9 @@ pub fn plan(
                 m.metadata.sz_decimals,
                 rust_decimal::RoundingStrategy::ToZero,
             );
+        if quantity <= D::ZERO {
+            continue;
+        }
         let intent = Intent::Entry {
             symbol: symbol.into(),
             buy,
@@ -344,7 +359,7 @@ pub fn plan(
             stop,
             take_profit,
         };
-        if entry(
+        match entry(
             &intent,
             "unsigned-plan",
             "unsigned-plan",
@@ -352,11 +367,19 @@ pub fn plan(
             book,
             state,
             now,
-        )
-        .is_ok()
-        {
-            return Ok(intent);
+        ) {
+            Ok(_) => return Ok(intent),
+            Err(error)
+                if error
+                    .downcast_ref::<crate::rejection::Rejection>()
+                    .is_some() => {}
+            Err(error) => return Err(error),
         }
     }
-    anyhow::bail!("no executable plan within price, liquidity and risk limits")
+    crate::rejection::check(
+        false,
+        "no_executable_plan",
+        "no executable plan within price, liquidity and risk limits",
+    )?;
+    unreachable!()
 }

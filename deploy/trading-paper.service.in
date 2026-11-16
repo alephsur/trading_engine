@@ -1,0 +1,20 @@
+[Unit]
+Description=Trading PAPER engine
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+WorkingDirectory=@PROJECT@
+ExecStart=/usr/bin/bash @LAUNCHER@
+Restart=on-failure
+RestartSec=30
+TimeoutStopSec=60
+KillSignal=SIGTERM
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,103 @@
+{
+  "recorded_at": "2026-11-16T10:45:05.441102+00:00",
+  "scope": "PAPER continuity and pre-dispatch testnet rejection handling; no external testnet writes",
+  "paper": {
+    "service": "trading-paper.service",
+    "service_state": [
+      "ActiveState=active",
+      "UnitFileState=enabled",
+      "NRestarts=0"
+    ],
+    "linger": "Linger=yes",
+    "strategy_config_id": "4ca2bf8c79c86b9feca2ac31ee390633e0221a127b4ed2f8e15cc894c39f09ca",
+    "preserved_fields": [
+      "activated_at",
+      "config",
+      "cash",
+      "equity",
+      "positions",
+      "sequence"
+    ],
+    "cash": "10000",
+    "equity": "10000",
+    "positions": [],
+    "health": {
+      "analysis_ready": true,
+      "database": true,
+      "execution_enabled": false,
+      "history_ready": true,
+      "market_data_fresh": true,
+      "mode": "PAPER",
+      "paper_execution_enabled": true,
+      "paper_ready": true,
+      "status": "ready"
+    },
+    "continuity": {
+      "as_of_ms": 1794825874363,
+      "gap_count": 3,
+      "gap_threshold_ms": 60000,
+      "last_tick_age_ms": 610,
+      "last_tick_ms": 1794825873753,
+      "limit": 100,
+      "mode": "PAPER",
+      "recent_gaps": [
+        {
+          "duration_ms": 243384455,
+          "previous_tick_ms": 1794579441956,
+          "resumed_ms": 1794822826411
+        },
+        {
+          "duration_ms": 3559875,
+          "previous_tick_ms": 1794554457492,
+          "resumed_ms": 1794558017367
+        },
+        {
+          "duration_ms": 63957691,
+          "previous_tick_ms": 1794417411752,
+          "resumed_ms": 1794481369443
+        }
+      ],
+      "recorded_gap_ms": 310902021,
+      "recording_gap_open": false,
+      "scope": "persisted PAPER ticks; continuous ticks do not prove market feed availability",
+      "worker_fresh": true
+    }
+  },
+  "outage": {
+    "cause": "system suspend confirmed by systemd-suspend.service journal",
+    "suspended_local": "2026-11-13T15:17:22+01:00",
+    "resumed_local": "2026-11-16T10:53:43+01:00",
+    "continuous_forward_observation": false,
+    "historical_candle_recovery_does_not_replace_forward_observation": true
+  },
+  "validation": {
+    "workspace_tests_passed": 79,
+    "isolated_database_tests_passed": 17,
+    "clippy_all_targets": "passed with warnings denied",
+    "initial_service_smoke": "passed",
+    "explicit_service_restart_smoke": "passed",
+    "service_installer_and_launcher_syntax": "passed",
+    "rejection_checks": [
+      "ATR volatility",
+      "ATR stop distance",
+      "signal expiry",
+      "invalid account and stale book propagate",
+      "repeated candle deduplicated",
+      "later candle recorded",
+      "entry budget preserved",
+      "existing pause preserved",
+      "no exchange requests created"
+    ]
+  },
+  "testnet": {
+    "sessions_rearmed": false,
+    "new_external_orders": 0,
+    "natural_10c_acceptance": "pending",
+    "strategy_or_risk_limits_changed": false
+  },
+  "limitations": [
+    "User service cannot run while the computer is suspended or powered off.",
+    "PostgreSQL and network must be available; service does not start Docker.",
+    "Continuity tracks persisted worker ticks, not market-feed completeness."
+  ]
+}

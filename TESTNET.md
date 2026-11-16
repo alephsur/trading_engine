@@ -537,3 +537,19 @@ La evidencia sintética valida ejecución externa, no generación natural de la
 estrategia ni un disparo real de stop/objetivo. La salida de esta prueba es un
 cierre operativo explícito; no acredita rentabilidad ni completa por sí sola
 la aceptación natural de 10C.
+
+### Rechazo de señal frente a fallo operativo
+
+Antes de reclamar el único intento de entrada, una señal caducada o incompatible
+con límites de volatilidad, stop, importe, spread, distancia de precio, liquidez o
+pérdida se registra en `testnet_signal_rejections`. El estado incluye
+`last_rejection` con vela, momento y motivo. Se descarta esa vela una sola vez por
+sesión y se permite evaluar una vela posterior, sin consumir el intento ni ampliar
+el plazo. No se levanta ninguna pausa existente. Un plan sin tamaño/precio viable
+se informa como `no_executable_plan`.
+
+Los fallos de transporte, datos inválidos, cuenta incierta y fallos posteriores a
+la reclamación siguen propagándose al supervisor y pausando la sesión. No se
+reintentan órdenes. Los límites no cambian: ATR/precio puede ser admisible (hasta
+3 %) y aun así el stop de 2 ATR superar el máximo del 3 % de distancia al precio
+de entrada (`atr_stop_incompatible`). Se rechaza la señal; no se recorta el stop.

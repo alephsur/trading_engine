@@ -143,3 +143,16 @@ ATR fue rechazado antes de enviar por superar la distancia máxima del stop.
 La prueba aceptada usó el perfil de integración existente, sin relajar límites.
 Evidencia: `docs/testnet-synthetic-acceptance-2026-11-13.json`.
 El ensayo natural permanece pausado tras fallos de lectura; no se ha rearmado.
+
+Actualización 16-11-2026: PAPER instalado como servicio de usuario persistente,
+con recuperación automática y registro durable de huecos superior a 60 s en
+`/paper/continuity`. La suspensión del equipo del 13 al 16 produjo un hueco de
+67,61 h; los otros dos registrados son 17,77 h y 0,99 h. Estos periodos no cuentan
+como seguimiento prospectivo continuo. Estrategia y cuenta conservadas.
+
+Los rechazos normales de señal testnet se separan de fallos operativos antes de
+reclamar el intento: registro deduplicado por vela, sin pausa nueva ni consumo
+del presupuesto. Los fallos operativos siguen bloqueando. Pruebas locales y con
+PostgreSQL aislado; no se ha rearmado testnet ni enviado una nueva orden externa.
+La aceptación natural de 10C sigue pendiente. Evidencia de esta entrega:
+`docs/continuity-acceptance-2026-11-16.json`.

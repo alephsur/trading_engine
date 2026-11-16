@@ -45,6 +45,11 @@ pub fn signal(e: &Evaluation, started: i64, now: i64) -> Result<bool> {
                     && e.decisions[0].strategy == "confirmed_breakout_1h_v1")),
         "unexpected automatic strategy"
     );
+    crate::rejection::check(
+        now - e.close_time <= 120_000,
+        "signal_expired",
+        "signal predates session or is stale",
+    )?;
     ensure!(
         e.close_time >= started && (1..=120_000).contains(&(now - e.close_time)),
         "signal predates session or is stale"
@@ -66,6 +71,12 @@ pub fn plan(
     now: i64,
 ) -> Result<Intent> {
     let buy = signal(e, started, now)?;
+    model::fresh_book(book, &e.symbol, now)?;
+    ensure!(model::flat(state)?, "account must be flat");
+    ensure!(
+        model::decimal(&state["marginSummary"]["accountValue"])? >= dec("100"),
+        "account equity below minimum"
+    );
     let atr = e
         .indicators
         .as_ref()
@@ -80,10 +91,12 @@ pub fn plan(
             .ok_or_else(|| anyhow::anyhow!("empty asks"))?
             .px)
         / dec("2");
-    ensure!(
-        mid > D::ZERO && atr > D::ZERO && atr / mid <= dec("0.03"),
-        "ATR outside risk limits"
-    );
+    ensure!(mid > D::ZERO && atr > D::ZERO, "invalid ATR or midpoint");
+    crate::rejection::check(
+        atr / mid <= dec("0.03"),
+        "atr_volatility",
+        "ATR outside risk limits",
+    )?;
     let base = model::plan(&e.symbol, buy, markets, book, state, now)?;
     let Intent::Entry {
         mut quantity,
@@ -173,6 +186,9 @@ pub async fn status(pool: &PgPool, account: &str, id: &str) -> Result<Value> {
     value["auto_started_ms"] = json!(started);
     value["entry_budget_consumed"] = json!(claim.is_some());
     value["claim"] = json!(claim);
+    let rejection: Option<Value> = sqlx::query_scalar("SELECT jsonb_build_object('close_ms',close_ms,'observed_ms',observed_ms,'reason',reason) FROM testnet_signal_rejections WHERE account=$1 AND session_id=$2 ORDER BY close_ms DESC LIMIT 1")
+        .bind(account).bind(id).fetch_optional(pool).await?;
+    value["last_rejection"] = json!(rejection);
     if value["config"]["settings"]["strategy"] == "confirmed_breakout_1h_v1" {
         value["supervision"] = crate::supervision::status(pool, account).await?;
     }
@@ -271,6 +287,14 @@ pub async fn tick<T: InfoTransport + ExchangeTransport>(
     if e.close_time < started || e.decisions.iter().all(|d| d.direction == Direction::Hold) {
         return status(pool, account, id).await;
     }
+    let rejected: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM testnet_signal_rejections WHERE account=$1 AND session_id=$2 AND close_ms=$3)")
+        .bind(account).bind(id).bind(e.close_time).fetch_one(pool).await?;
+    if rejected {
+        return status(pool, account, id).await;
+    }
+    if let Err(error) = signal(&e, started, now_ms()) {
+        return reject(pool, account, id, e.close_time, error).await;
+    }
     let markets = client.markets().await?;
     let state = client.account(account).await?;
     let book: Book = serde_json::from_value(
@@ -278,12 +302,19 @@ pub async fn tick<T: InfoTransport + ExchangeTransport>(
             .info(json!({"type":"l2Book","coin":config.symbol}))
             .await?,
     )?;
-    let intent = plan(&e, &markets, &book, &state, started, now_ms())?;
+    let intent = match plan(&e, &markets, &book, &state, started, now_ms()) {
+        Ok(intent) => intent,
+        Err(error) => return reject(pool, account, id, e.close_time, error).await,
+    };
     let command = format!(
         "auto-{}",
         model::cloid(account, id, 7).trim_start_matches("0x")
     );
-    let (action, state) = executor::preflight(client, pool, account, &command, &intent).await?;
+    let (action, state) = match executor::preflight(client, pool, account, &command, &intent).await
+    {
+        Ok(result) => result,
+        Err(error) => return reject(pool, account, id, e.close_time, error).await,
+    };
     leverage_for(
         &client
             .info(json!({"type":"activeAssetData","user":account,"coin":config.symbol}))
@@ -316,4 +347,98 @@ async fn supervise<T: InfoTransport + ExchangeTransport>(
         crate::supervision::protect_once(client, pool, signer, account, entry, &cycle).await?;
     }
     Ok(cycle["report"].clone())
+}
+
+async fn reject(
+    pool: &PgPool,
+    account: &str,
+    id: &str,
+    close: i64,
+    error: anyhow::Error,
+) -> Result<Value> {
+    let Some(reason) = error.downcast_ref::<crate::rejection::Rejection>() else {
+        return Err(error);
+    };
+    sqlx::query("INSERT INTO testnet_signal_rejections(account,session_id,close_ms,observed_ms,reason) VALUES($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING")
+        .bind(account).bind(id).bind(close).bind(now_ms()).bind(reason.code).execute(pool).await?;
+    status(pool, account, id).await
+}
+
+#[cfg(test)]
+mod rejection_tests {
+    use super::*;
+    use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
+    use std::str::FromStr;
+
+    #[tokio::test]
+    #[ignore = "requires TEST_DATABASE_URL; isolated schema, no exchange"]
+    async fn rejection_preserves_budget_and_pause_and_propagates_failures() {
+        let url = std::env::var("TEST_DATABASE_URL").unwrap();
+        let admin = trading_storage::connect(&url).await.unwrap();
+        let schema = format!(
+            "reject_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        );
+        sqlx::query(&format!("CREATE SCHEMA {schema}"))
+            .execute(&admin)
+            .await
+            .unwrap();
+        let pool = PgPoolOptions::new()
+            .connect_with(
+                PgConnectOptions::from_str(&url)
+                    .unwrap()
+                    .options([("search_path", schema.as_str())]),
+            )
+            .await
+            .unwrap();
+        sqlx::migrate!("../../migrations").run(&pool).await.unwrap();
+        let config: observer::Config =
+            serde_json::from_str(include_str!("../../../config/testnet-observer.json")).unwrap();
+        let account = "0x2222222222222222222222222222222222222222";
+        let id = "reject-session";
+        start(&pool, account, id, &config).await.unwrap();
+        for close in [100, 100, 200] {
+            let error = crate::rejection::check(false, "atr_stop_incompatible", "stop too distant")
+                .unwrap_err();
+            let result = reject(&pool, account, id, close, error).await.unwrap();
+            assert_eq!(result["paused"], false);
+            assert_eq!(result["entry_budget_consumed"], false);
+            assert_eq!(result["last_rejection"]["close_ms"], close);
+        }
+        let count: i64 = sqlx::query_scalar("SELECT count(*) FROM testnet_signal_rejections")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(count, 2);
+        assert!(
+            reject(
+                &pool,
+                account,
+                id,
+                300,
+                anyhow::anyhow!("transport failure")
+            )
+            .await
+            .is_err()
+        );
+        observer::pause(&pool, account, id).await.unwrap();
+        let error = crate::rejection::check(false, "spread", "spread").unwrap_err();
+        assert_eq!(
+            reject(&pool, account, id, 400, error).await.unwrap()["paused"],
+            true
+        );
+        let writes: i64 = sqlx::query_scalar("SELECT count(*) FROM testnet_requests")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(writes, 0);
+        pool.close().await;
+        sqlx::query(&format!("DROP SCHEMA {schema} CASCADE"))
+            .execute(&admin)
+            .await
+            .unwrap();
+    }
 }
