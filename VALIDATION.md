@@ -497,3 +497,23 @@ En esta revisión ya constan cinco interrupciones, unas 89,81 h acumuladas; la
 cuenta está operativa al verificar. El registro de continuidad ha conservado
 los dos nuevos huecos del día 16 sin modificar el manifiesto prospectivo.
 Las sesiones testnet anteriores siguen pausadas y vencidas; no se envían órdenes.
+
+## 16-11-2026 — adaptador ChatGPT OAuth local
+
+84 pruebas Rust superadas, incluyendo validación de identidad (firma/algoritmo,
+issuer/audience/nonce/caducidad), permisos del plan, exigencia del token de renovación,
+privacidad y bloqueo de archivos, estado OAuth de un solo uso, rechazo de Host/
+Origin ajenos y streaming sin resultado completo. Clippy con advertencias denegadas.
+Cinco pruebas frontend y compilación TypeScript/producción correctas; dos E2E con
+fixtures verifican dashboard y flujo de conexión, selección, análisis y revocación
+no confirmada. El proveedor en estas pruebas está simulado: no prueban el
+consentimiento de OpenAI ni una inferencia con la cuenta real.
+
+Servicio local reiniciado con ChatGPT habilitado; prueba de salud/datos públicos
+superada, estrategia y estado de cuenta PAPER conservados. E2E del dashboard
+compilado contra el servicio real superado y captura visual revisada. Descubrimiento
+OIDC público de OpenAI accesible. `/api/ai/status` informa disponible y desconectado.
+Pendientes: consentimiento del usuario, catálogo autorizado y primera respuesta
+completa del modelo; después, integración consultiva automática con señales testnet.
+La clave RSA dentro de `crates/chatgpt/tests/fixtures` es una fixture generada solo
+para verificar firmas en pruebas, sin acceso a ningún servicio o cuenta.

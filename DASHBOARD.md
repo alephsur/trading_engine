@@ -141,3 +141,9 @@ independiente. Si falla, conserva la evidencia con aviso y no presenta el motor
 como activo a partir de una respuesta antigua. Permite actualizar manualmente.
 Una ausencia de huecos de más de 60 s no demuestra continuidad del feed ni
 valoraciones completas; se conserva el monitor de calidad existente.
+
+Sistema → Asistente ChatGPT incorpora conexión OAuth local, selección del modelo
+y una prueba manual de análisis. Requiere `CHATGPT_ENABLED=1` y acceso mediante
+la dirección `127.0.0.1` del servidor. La prueba consume el plan autorizado al
+pulsar el botón, utiliza datos públicos y no opera en testnet. Ver `ADVISOR.md`
+para configuración, permisos, límites y almacenamiento de credenciales.

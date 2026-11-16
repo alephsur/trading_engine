@@ -116,3 +116,56 @@ mediante muchas ejecuciones. Las fechas declaradas requieren fuentes confiables.
 `scripts/advisor_smoke.py` verifica el circuito con datos y una revisión sintéticos
 en un directorio temporal. No llama a un LLM, no emite una aprobación humana real
 y no despliega la configuración exportada.
+
+## Conexión local con ChatGPT mediante OAuth
+
+El dashboard ofrece en Sistema → Asistente ChatGPT una conexión oficial
+«Continuar con ChatGPT», un catálogo de modelos de la cuenta y una prueba manual
+de análisis. `trading-chatgpt` es independiente del exchange y no recibe manejadores
+de ejecución. La prueba usa precios públicos, su frescura y el identificador de
+estrategia del dashboard, **no datos testnet**. La incorporación automática a las
+señales testnet queda pendiente de validar el consentimiento y una respuesta real.
+
+Habilitar `CHATGPT_ENABLED=1` con el servidor enlazado a `127.0.0.1:puerto` y abrir
+el dashboard por esa dirección exacta. No se permite exponer esta conexión en una
+interfaz pública. El servidor usa `/auth/callback` en ese mismo puerto para OAuth.
+En el servicio local se configura con un drop-in de systemd; el lanzador PAPER
+conserva el puerto 3001. No se necesita clave API ni copiar credenciales de Codex.
+
+Flujo del usuario:
+
+1. Abrir Sistema y pulsar «Continuar con ChatGPT». Para reautorizar un registro,
+   seleccionarlo antes en el selector de cuentas; la opción de añadir crea uno nuevo.
+2. Autorizar en OpenAI el uso del plan. Volver al dashboard tras el mensaje de éxito.
+3. Seleccionar un modelo disponible y pulsar «Guardar modelo».
+4. Pulsar «Probar análisis». Se guarda solo la última respuesta completada junto
+   con contexto, modelo, fecha y versión del prompt. No se ejecutan órdenes.
+5. Revisar consumo y permisos en el enlace de ajustes de ChatGPT. «Desconectar»
+   intenta revocar la sesión y borra sus tokens locales; avisa si no se pudo
+   confirmar la revocación remota. Conserva el registro para futuros inicios.
+
+Los registros y tokens se guardan fuera del repositorio en
+`~/.local/state/trading-engine/chatgpt/accounts.json`, o `CHATGPT_STATE_DIR` si se
+configura otra carpeta: directorio 0700, archivo 0600, escritura atómica y bloqueo
+de propietario único. No incluirlos en respaldos compartidos ni en logs. Los
+registros de cuentas quedan separados; el cambio solo se activa tras validar la
+identidad y los permisos. El estado y la UI nunca reciben tokens.
+
+La autorización usa PKCE, state de un solo uso con vencimiento de cinco minutos,
+nonce, validación RS256/JWKS, emisor, destinatario y expiración. Las operaciones
+locales exigen Host y Origin exactos más una cabecera del dashboard para impedir
+solicitudes desde otras páginas. Las credenciales se renuevan de forma serializada.
+Los destinos remotos están fijados a OpenAI y no siguen redirecciones.
+
+Las consultas usan Responses con `store:false` y `stream:true`. No se acepta una
+respuesta parcial como análisis terminado. Hay límites de tamaño, un timeout de
+90 s para análisis y ausencia de reintentos automáticos de inferencia. No existe
+un bucle de consultas automáticas. La disponibilidad y los límites del plan se
+comprueban al autorizar y consultar; no se promete acceso ilimitado ni acceso a
+conversaciones previas. Si falla la IA, los procesos de mercado y PAPER continúan.
+
+Fuentes oficiales consultadas el 16-11-2026:
+- [Registro y autorización](https://developers.openai.com/siwc/token-sharing-open-source/sign-in)
+- [Cuentas, renovación y revocación](https://developers.openai.com/siwc/token-sharing-open-source/profiles-and-sessions)
+- [Modelos e inferencia](https://developers.openai.com/siwc/token-sharing-open-source/models-and-inference)
+- [Limitaciones de la vista previa](https://developers.openai.com/siwc/token-sharing-open-source/preview-limitations)

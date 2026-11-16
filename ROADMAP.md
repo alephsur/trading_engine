@@ -174,3 +174,18 @@ La aceptación natural de 10C sigue pendiente. Evidencia de esta entrega:
   mantener el flujo de revisión humana y separación de ejecución existente.
 - [ ] Implementar producción solo en una entrega expresamente autorizada tras
   las validaciones: LIVE actual es una frontera offline, sin transporte mainnet.
+
+### Conexión ChatGPT — 16-11-2026
+
+- [x] Adaptador OAuth oficial local, credenciales protegidas y renovación serializada.
+- [x] Dashboard: autorización, registros de cuentas, modelos disponibles,
+  desconexión y análisis manual con contexto público acotado.
+- [x] Pruebas de identidad/PKCE/estado, permisos, streaming incompleto y controles
+  de origen, además de navegador con proveedor simulado.
+- [ ] Consentimiento del usuario y primera respuesta de un modelo real con su plan.
+- [ ] Incorporar análisis consultivo de señales testnet con deduplicación, registro
+  durable y límites de frecuencia, después de validar el acceso real.
+
+La prueba manual no rearma testnet ni cambia estrategia o límites. El consentimiento
+requiere que el usuario inicie sesión directamente en OpenAI. No se marca la
+integración externa como aceptada hasta recibir una respuesta real completa.

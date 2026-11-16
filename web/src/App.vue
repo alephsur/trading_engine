@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ChatGPTPanel from "./ChatGPTPanel.vue";
 import ContinuityPanel from "./ContinuityPanel.vue";
 import {
   defineAsyncComponent,
@@ -649,6 +650,7 @@ async function confirmControl() {
                 <small>Contadores reiniciados al arrancar el proceso.</small>
               </section>
             </div>
+            <ChatGPTPanel />
             <ContinuityPanel />
             <section class="panel">
               <h2>Alertas registradas</h2>

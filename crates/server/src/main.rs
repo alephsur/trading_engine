@@ -1,4 +1,5 @@
 mod api;
+mod chatgpt;
 mod dashboard;
 mod paper;
 mod recovery;
@@ -27,6 +28,7 @@ struct Feed {
 }
 #[derive(Clone)]
 struct App {
+    chatgpt: Option<Arc<chatgpt::Local>>,
     pool: PgPool,
     feed: Arc<RwLock<Feed>>,
     client: Arc<trading_market_data::history::PublicClient>,
@@ -94,6 +96,12 @@ async fn prices(State(app): State<App>) -> Json<Value> {
 }
 fn router(app: App) -> Router {
     let api = Router::new()
+        .route("/ai/status", get(chatgpt::status))
+        .route("/ai/connect", axum::routing::post(chatgpt::connect))
+        .route("/ai/models", axum::routing::post(chatgpt::models))
+        .route("/ai/model", axum::routing::post(chatgpt::select))
+        .route("/ai/disconnect", axum::routing::post(chatgpt::disconnect))
+        .route("/ai/analyze", axum::routing::post(chatgpt::analyze))
         .route("/observability", get(dashboard::snapshot))
         .route("/metrics", get(dashboard::metrics))
         .route("/paper/control", axum::routing::post(dashboard::control))
@@ -113,6 +121,7 @@ fn router(app: App) -> Router {
         .route("/paper/positions", get(api::paper_positions))
         .route("/paper/{kind}", get(api::paper_ledger));
     Router::new()
+        .route("/auth/callback", get(chatgpt::callback))
         .merge(api.clone())
         .nest("/api", api)
         .route(
@@ -248,6 +257,7 @@ async fn main() -> Result<()> {
     };
     trading_storage::paper::initialize(&pool, paper_config).await?;
     let app = App {
+        chatgpt: chatgpt::configured()?,
         control_token: Arc::new(dashboard::token(std::env::var("PAPER_CONTROL_TOKEN").ok())?),
         telemetry: Arc::new(dashboard::Telemetry::default()),
         engine,
@@ -317,6 +327,7 @@ mod tests {
     #[tokio::test]
     async fn liveness_does_not_require_database() {
         let app = App {
+            chatgpt: None,
             control_token: Arc::new(None),
             telemetry: Arc::new(dashboard::Telemetry::default()),
             pool: sqlx::postgres::PgPoolOptions::new()
