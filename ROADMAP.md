@@ -156,3 +156,21 @@ del presupuesto. Los fallos operativos siguen bloqueando. Pruebas locales y con
 PostgreSQL aislado; no se ha rearmado testnet ni enviado una nueva orden externa.
 La aceptación natural de 10C sigue pendiente. Evidencia de esta entrega:
 `docs/continuity-acceptance-2026-11-16.json`.
+
+## Próximas entregas tras 10C — revisión 16-11-2026
+
+- [x] Mostrar continuidad PAPER en el dashboard: huecos, duración, reanudación y
+  caducidad independiente de los datos; conservar evidencia ante fallos de lectura.
+- [ ] Completar la aceptación natural 10C con un nuevo ensayo acotado y conservar
+  evidencia de entrada, protecciones y salida. Las sesiones anteriores están
+  pausadas y vencidas; esta entrega no las rearma.
+- [ ] Evaluar el periodo PAPER congelado (11 noviembre–11 diciembre) con cobertura,
+  costes y tamaño de muestra explícitos. Los huecos impiden describirlo como
+  30 días continuos; no cambiar retrospectivamente el manifiesto ni los parámetros.
+- [ ] Preparar operación prolongada: disponibilidad del equipo/base de datos,
+  copias de seguridad con restauración comprobada y agregados/checkpoints
+  verificados antes de escalar el historial.
+- [ ] Conectar un proveedor de IA tras elegir modelo, credenciales y presupuesto;
+  mantener el flujo de revisión humana y separación de ejecución existente.
+- [ ] Implementar producción solo en una entrega expresamente autorizada tras
+  las validaciones: LIVE actual es una frontera offline, sin transporte mainnet.

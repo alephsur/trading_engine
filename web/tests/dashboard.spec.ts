@@ -4,11 +4,36 @@ test("dashboard shows data, confirms pause, handles outages and fits mobile", as
   page,
 }) => {
   const state = snapshot();
+  let continuityOffline = false;
   let offline = false,
     pausedRequest = false;
   await page.route("**/api/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
     if (offline) return route.abort();
+    if (path.endsWith("/paper/continuity")) {
+      if (continuityOffline)
+        return route.fulfill({ status: 503, json: { error: "unavailable" } });
+      return route.fulfill({
+        json: {
+          as_of_ms: Date.now(),
+          last_tick_ms: Date.now(),
+          last_tick_age_ms: 0,
+          worker_fresh: true,
+          recording_gap_open: false,
+          gap_threshold_ms: 60000,
+          gap_count: 1,
+          recorded_gap_ms: 243384455,
+          limit: 100,
+          recent_gaps: [
+            {
+              previous_tick_ms: 1794579441956,
+              resumed_ms: 1794822826411,
+              duration_ms: 243384455,
+            },
+          ],
+        },
+      });
+    }
     let value: unknown = {};
     if (path.endsWith("/observability")) {
       state.generated_at = Date.now();
@@ -94,6 +119,30 @@ test("dashboard shows data, confirms pause, handles outages and fits mobile", as
     fullPage: true,
     animations: "disabled",
   });
+  await page
+    .getByRole("button", { name: "Ver continuidad", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Continuidad PAPER" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("cell", { name: "67,61 h", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("Motor activo", { exact: true })).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+    )
+    .toBe(true);
+  continuityOffline = true;
+  await page.getByRole("button", { name: "Actualizar continuidad" }).click();
+  await expect(
+    page.getByText("Sin actualización reciente", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("cell", { name: "67,61 h", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Resumen", exact: true }).click();
   offline = true;
   await expect(page.getByRole("alert")).toContainText("No se pudo actualizar", {
     timeout: 15000,
@@ -153,6 +202,15 @@ test("real service serves bundled UI and persisted observations", async ({
   await expect(
     page.getByRole("heading", { name: "Telemetría del proceso" }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Continuidad PAPER" }),
+  ).toBeVisible();
+  await expect(page.getByText("Motor activo", { exact: true })).toBeVisible();
+  await page.screenshot({
+    path: "test-results/continuity-real.png",
+    fullPage: true,
+    animations: "disabled",
+  });
   expect(browserErrors).toEqual([]);
   const denied = await request.post("/api/paper/control", {
     data: { command_id: "unauthorized-test", action: "pause" },

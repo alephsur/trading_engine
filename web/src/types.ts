@@ -98,3 +98,20 @@ export type Command = {
   action: "pause" | "resume" | "close_all" | "close_position";
   position_id?: number;
 };
+
+export interface Continuity {
+  as_of_ms: number;
+  last_tick_ms: number;
+  last_tick_age_ms: number;
+  worker_fresh: boolean;
+  recording_gap_open: boolean;
+  gap_threshold_ms: number;
+  gap_count: number;
+  recorded_gap_ms: number;
+  recent_gaps: {
+    previous_tick_ms: number;
+    resumed_ms: number;
+    duration_ms: number;
+  }[];
+  limit: number;
+}

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ContinuityPanel from "./ContinuityPanel.vue";
 import {
   defineAsyncComponent,
   computed,
@@ -148,6 +149,17 @@ async function confirmControl() {
         >
           El motor está recuperando datos o servicios. Consulta Sistema para ver
           el estado de cada componente.
+        </div>
+        <div
+          v-if="s.continuity && s.continuity.gap_count > 0"
+          class="alert"
+          role="status"
+        >
+          El historial PAPER tiene interrupciones. El estado actual no acredita
+          un ensayo continuo.
+          <button class="text-button" @click="tab = 'Sistema'">
+            Ver continuidad
+          </button>
         </div>
         <div v-if="snap?.account.blockers.length" class="blockers">
           <span v-for="b in snap.account.blockers" :key="b">{{
@@ -637,6 +649,7 @@ async function confirmControl() {
                 <small>Contadores reiniciados al arrancar el proceso.</small>
               </section>
             </div>
+            <ContinuityPanel />
             <section class="panel">
               <h2>Alertas registradas</h2>
               <p v-if="!snap.errors.length" class="subtitle">

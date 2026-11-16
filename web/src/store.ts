@@ -1,6 +1,13 @@
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
-import type { Snapshot, Health, Candle, Evaluation, Command } from "./types";
+import type {
+  Snapshot,
+  Health,
+  Candle,
+  Evaluation,
+  Command,
+  Continuity,
+} from "./types";
 export class HttpError extends Error {
   constructor(public status: number) {
     super(`HTTP ${status}`);
@@ -25,6 +32,30 @@ export const useDashboard = defineStore("dashboard", () => {
     health = ref<Health | null>(null),
     prices = ref<Record<string, string>>({}),
     priceFresh = ref(false);
+  const continuity = ref<Continuity | null>(null),
+    continuityReceived = ref(0),
+    continuityError = ref(false);
+  const continuityFresh = computed(
+    () =>
+      !!continuity.value &&
+      !continuityError.value &&
+      now.value - continuityReceived.value < 15000,
+  );
+  const continuityTickAge = computed(() =>
+    continuity.value
+      ? continuity.value.last_tick_age_ms +
+        Math.max(0, now.value - continuityReceived.value)
+      : null,
+  );
+  async function refreshContinuity() {
+    try {
+      continuity.value = await request<Continuity>("/paper/continuity");
+      continuityReceived.value = Date.now();
+      continuityError.value = false;
+    } catch {
+      continuityError.value = true;
+    }
+  }
   const symbol = ref("BTC"),
     interval = ref("1h"),
     candles = ref<Candle[]>([]),
@@ -130,7 +161,7 @@ export const useDashboard = defineStore("dashboard", () => {
     loading.value = false;
   }
   async function cycle() {
-    await Promise.all([refresh(), market()]);
+    await Promise.all([refresh(), market(), refreshContinuity()]);
     if (running) timer = setTimeout(cycle, 5000);
   }
   function start() {
@@ -188,6 +219,10 @@ export const useDashboard = defineStore("dashboard", () => {
     }
   }
   return {
+    continuity,
+    continuityFresh,
+    continuityTickAge,
+    refreshContinuity,
     snapshot,
     health,
     prices,

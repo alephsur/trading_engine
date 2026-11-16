@@ -127,3 +127,17 @@ Referencias de las bibliotecas: [Vue](https://vuejs.org/guide/),
 [ECharts](https://echarts.apache.org/handbook/en/get-started/) y
 [Vite](https://vite.dev/guide/). Versiones exactas y dependencias transitivas en
 `web/package-lock.json`.
+
+### Continuidad PAPER
+
+Sistema incluye un panel de continuidad basado en `/paper/continuity`: última
+actividad, recuento total, duración acumulada de interrupciones cerradas y hasta
+100 huecos recientes con horarios UTC. Un aviso permite acceder al panel desde
+el resumen cuando hay huecos históricos, aunque el motor esté operativo ahora.
+La duración no incluye un hueco todavía abierto.
+
+La consulta se actualiza cada cinco segundos y caduca a los 15 s de forma
+independiente. Si falla, conserva la evidencia con aviso y no presenta el motor
+como activo a partir de una respuesta antigua. Permite actualizar manualmente.
+Una ausencia de huecos de más de 60 s no demuestra continuidad del feed ni
+valoraciones completas; se conserva el monitor de calidad existente.

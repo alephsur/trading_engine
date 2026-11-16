@@ -484,3 +484,16 @@ salud lista, cuenta y configuración preservadas, tres huecos históricos visibl
 La interrupción principal está correlacionada con la suspensión del sistema.
 Evidencia: `docs/continuity-acceptance-2026-11-16.json`. Esto no sustituye la
 aceptación natural testnet de 10C ni completa un periodo PAPER continuo.
+
+## 16-11-2026 — continuidad visible en el dashboard
+
+Cinco pruebas de interfaz/estado superadas, compilación TypeScript y producción,
+formato correcto y E2E de navegador con fixtures (móvil, controles, interrupciones
+históricas y fallo de la consulta de continuidad). E2E contra el servicio local
+superado y captura visual revisada: Sistema muestra los huecos persistidos y su
+duración sin presentar evidencia antigua como estado actual.
+
+En esta revisión ya constan cinco interrupciones, unas 89,81 h acumuladas; la
+cuenta está operativa al verificar. El registro de continuidad ha conservado
+los dos nuevos huecos del día 16 sin modificar el manifiesto prospectivo.
+Las sesiones testnet anteriores siguen pausadas y vencidas; no se envían órdenes.

@@ -79,3 +79,39 @@ describe("data quality and operator commands", () => {
     ]);
   });
 });
+
+describe("continuity evidence", () => {
+  it("expires continuity independently and preserves evidence on failure", async () => {
+    const fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          as_of_ms: 1000,
+          last_tick_ms: 900,
+          last_tick_age_ms: 100,
+          gap_count: 3,
+          recorded_gap_ms: 310902021,
+          recent_gaps: [],
+        }),
+      ),
+    );
+    vi.stubGlobal("fetch", fetch);
+    const s = useDashboard();
+    await s.refreshContinuity();
+    s.now = Date.now();
+    expect(s.continuityFresh).toBe(true);
+    s.now += 16000;
+    expect(s.continuityFresh).toBe(false);
+    expect(s.continuityTickAge).toBeGreaterThanOrEqual(16100);
+    fetch.mockRejectedValueOnce(new TypeError("offline"));
+    await s.refreshContinuity();
+    expect(s.continuity?.gap_count).toBe(3);
+    expect(s.continuityFresh).toBe(false);
+    expect(s.errors).toEqual([]);
+    fetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ gap_count: 3, last_tick_age_ms: 0 })),
+    );
+    await s.refreshContinuity();
+    s.now = Date.now();
+    expect(s.continuityFresh).toBe(true);
+  });
+});
